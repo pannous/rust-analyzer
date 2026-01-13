@@ -143,6 +143,11 @@ pub enum SyntaxKind {
     TRY_KW,
     UNION_KW,
     YEET_KW,
+    // Custom operators for Rust fork
+    AND_KW,
+    OR_KW,
+    XOR_KW,
+    NOT_KW,
     BYTE,
     BYTE_STRING,
     CHAR,
@@ -623,6 +628,11 @@ impl SyntaxKind {
             SYM_KW => "sym",
             UNION_KW => "union",
             YEET_KW => "yeet",
+            // Custom operators for Rust fork
+            AND_KW => "and",
+            OR_KW => "or",
+            XOR_KW => "xor",
+            NOT_KW => "not",
             ASYNC_KW => "async",
             AWAIT_KW => "await",
             DYN_KW => "dyn",
@@ -725,6 +735,11 @@ impl SyntaxKind {
             SYM_KW => true,
             UNION_KW => true,
             YEET_KW => true,
+            // Custom operators for Rust fork
+            AND_KW => true,
+            OR_KW => true,
+            XOR_KW => true,
+            NOT_KW => true,
             _ => false,
         }
     }
@@ -815,6 +830,11 @@ impl SyntaxKind {
             SYM_KW => true,
             UNION_KW => true,
             YEET_KW => true,
+            // Custom operators for Rust fork
+            AND_KW => true,
+            OR_KW => true,
+            XOR_KW => true,
+            NOT_KW => true,
             _ => false,
         }
     }
@@ -968,6 +988,11 @@ impl SyntaxKind {
             "sym" => SYM_KW,
             "union" => UNION_KW,
             "yeet" => YEET_KW,
+            // Custom operators for Rust fork
+            "and" => AND_KW,
+            "or" => OR_KW,
+            "xor" => XOR_KW,
+            "not" => NOT_KW,
             _ => return None,
         };
         Some(kw)
@@ -1139,6 +1164,11 @@ macro_rules ! T_ {
     [sym] => { $ crate :: SyntaxKind :: SYM_KW };
     [union] => { $ crate :: SyntaxKind :: UNION_KW };
     [yeet] => { $ crate :: SyntaxKind :: YEET_KW };
+    // Custom operators for Rust fork
+    [and] => { $ crate :: SyntaxKind :: AND_KW };
+    [or] => { $ crate :: SyntaxKind :: OR_KW };
+    [xor] => { $ crate :: SyntaxKind :: XOR_KW };
+    [not] => { $ crate :: SyntaxKind :: NOT_KW };
     [async] => { $ crate :: SyntaxKind :: ASYNC_KW };
     [await] => { $ crate :: SyntaxKind :: AWAIT_KW };
     [dyn] => { $ crate :: SyntaxKind :: DYN_KW };

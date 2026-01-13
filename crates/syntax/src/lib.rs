@@ -30,6 +30,8 @@ mod syntax_error;
 mod syntax_node;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod verify_custom_ops;
 mod token_text;
 mod validation;
 

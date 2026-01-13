@@ -238,6 +238,18 @@ fn current_op(p: &Parser<'_>) -> (u8, SyntaxKind, Associativity) {
         T![-]                  => (10, T![-],   Left),
         T![as]                 => (12, T![as],  Left),
 
+        // test and_or_xor_operators
+        // fn test() {
+        //     let a = true and false;
+        //     let b = true or false;
+        //     let c = 1 xor 2;
+        //     let d = a and b or c;
+        // }
+        // Custom operators for Rust fork: and/or/xor as contextual keywords
+        SyntaxKind::IDENT if p.at_contextual_kw(T![and]) => (4, T![&&], Left),
+        SyntaxKind::IDENT if p.at_contextual_kw(T![or])  => (3, T![||], Left),
+        SyntaxKind::IDENT if p.at_contextual_kw(T![xor]) => (7, T![^],  Left),
+
         _                      => NOT_AN_OP
     }
 }
@@ -292,7 +304,15 @@ fn expr_bp(
             continue;
         }
         let m = lhs.precede(p);
-        p.bump(op);
+        // Custom operators: and/or/xor are IDENT tokens that need special handling
+        if p.at(SyntaxKind::IDENT)
+            && (p.at_contextual_kw(T![and]) || p.at_contextual_kw(T![or]) || p.at_contextual_kw(T![xor]))
+        {
+            // Contextual keyword operator - bump the IDENT and remap to the actual operator
+            p.bump_remap(op);
+        } else {
+            p.bump(op);
+        }
 
         if is_range {
             // test postfix_range
