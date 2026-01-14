@@ -1,0 +1,13 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ Platform cache
+.intellijPlatform/
+
+# IDE
+.idea/
+
+# Bundled binaries (built locally)
+src/main/resources/bin/*/rust-analyzer

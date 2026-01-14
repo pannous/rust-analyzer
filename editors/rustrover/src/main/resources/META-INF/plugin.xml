@@ -1,0 +1,26 @@
+<idea-plugin>
+    <id>com.customra.rust-analyzer</id>
+    <name>Custom Rust Analyzer</name>
+    <vendor>Custom</vendor>
+    <description><![CDATA[
+        Bundles a custom rust-analyzer with extended syntax support:
+        <ul>
+            <li>Semicolon inference from newlines</li>
+            <li>Power operator (**)</li>
+            <li>Unicode operators</li>
+            <li>'not' prefix operator</li>
+            <li>and/or/xor operator aliases</li>
+        </ul>
+        Automatically configures the rust-analyzer server path on startup.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends optional="true" config-file="rust-support.xml">org.rust.lang</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <postStartupActivity
+            implementation="com.customra.SettingsConfigurer"/>
+        <applicationService
+            serviceImplementation="com.customra.BinaryManager"/>
+    </extensions>
+</idea-plugin>
