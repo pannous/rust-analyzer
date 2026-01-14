@@ -94,4 +94,69 @@ mod custom_ops_tests {
         let parse = SourceFile::parse(code, parser::Edition::CURRENT);
         assert!(parse.errors().is_empty(), "Unexpected errors: {:?}", parse.errors());
     }
+
+    // Unicode operator tests
+
+    #[test]
+    fn test_unicode_le() {
+        // ≤ should be parsed as <=
+        let code = "fn f() { let x = a ≤ b; }";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        assert!(parse.errors().is_empty(), "Unexpected errors for ≤: {:?}", parse.errors());
+
+        let debug = format!("{:#?}", parse.tree().syntax());
+        assert!(debug.contains("BIN_EXPR"), "Expected BIN_EXPR for ≤ comparison");
+    }
+
+    #[test]
+    fn test_unicode_ge() {
+        // ≥ should be parsed as >=
+        let code = "fn f() { let x = a ≥ b; }";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        assert!(parse.errors().is_empty(), "Unexpected errors for ≥: {:?}", parse.errors());
+
+        let debug = format!("{:#?}", parse.tree().syntax());
+        assert!(debug.contains("BIN_EXPR"), "Expected BIN_EXPR for ≥ comparison");
+    }
+
+    #[test]
+    fn test_unicode_ne() {
+        // ≠ should be parsed as !=
+        let code = "fn f() { let x = a ≠ b; }";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        assert!(parse.errors().is_empty(), "Unexpected errors for ≠: {:?}", parse.errors());
+
+        let debug = format!("{:#?}", parse.tree().syntax());
+        assert!(debug.contains("BIN_EXPR"), "Expected BIN_EXPR for ≠ comparison");
+    }
+
+    #[test]
+    fn test_unicode_ellipsis() {
+        // … should be parsed as .. (range)
+        let code = "fn f() { for i in 0…10 { } }";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        assert!(parse.errors().is_empty(), "Unexpected errors for …: {:?}", parse.errors());
+
+        let debug = format!("{:#?}", parse.tree().syntax());
+        assert!(debug.contains("RANGE_EXPR"), "Expected RANGE_EXPR for … range");
+    }
+
+    #[test]
+    fn test_unicode_not() {
+        // ¬ should be parsed as ! (negation)
+        let code = "fn f() { let x = ¬true; }";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        assert!(parse.errors().is_empty(), "Unexpected errors for ¬: {:?}", parse.errors());
+
+        let debug = format!("{:#?}", parse.tree().syntax());
+        assert!(debug.contains("PREFIX_EXPR"), "Expected PREFIX_EXPR for ¬ negation");
+    }
+
+    #[test]
+    fn test_unicode_mixed() {
+        // Test mixing Unicode and ASCII operators
+        let code = "fn f() { let x = a ≤ b and c ≥ d; }";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        assert!(parse.errors().is_empty(), "Unexpected errors: {:?}", parse.errors());
+    }
 }

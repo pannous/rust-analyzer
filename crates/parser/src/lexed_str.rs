@@ -294,7 +294,46 @@ impl<'a> Converter<'a> {
                 rustc_lexer::TokenKind::Slash => T![/],
                 rustc_lexer::TokenKind::Caret => T![^],
                 rustc_lexer::TokenKind::Percent => T![%],
-                rustc_lexer::TokenKind::Unknown => ERROR,
+                rustc_lexer::TokenKind::Unknown => {
+                    // Custom: Handle Unicode operators by mapping to ASCII equivalents
+                    // For compound operators, emit two joint tokens
+                    if let Some(first_char) = token_text.chars().next() {
+                        let char_len = first_char.len_utf8();
+                        match first_char {
+                            '≤' => {
+                                // ≤ (U+2264) → < = (will be recognized as <=)
+                                self.push(T![<], 0, vec![]);  // 0 len so next token is joint
+                                self.push(T![=], char_len, vec![]);
+                                return;
+                            }
+                            '≥' => {
+                                // ≥ (U+2265) → > = (will be recognized as >=)
+                                self.push(T![>], 0, vec![]);
+                                self.push(T![=], char_len, vec![]);
+                                return;
+                            }
+                            '≠' => {
+                                // ≠ (U+2260) → ! = (will be recognized as !=)
+                                self.push(T![!], 0, vec![]);
+                                self.push(T![=], char_len, vec![]);
+                                return;
+                            }
+                            '…' => {
+                                // … (U+2026 HORIZONTAL ELLIPSIS) → . . (will be recognized as ..)
+                                self.push(T![.], 0, vec![]);
+                                self.push(T![.], char_len, vec![]);
+                                return;
+                            }
+                            '¬' => {
+                                // ¬ (U+00AC NOT SIGN) → ! (single token)
+                                self.push(T![!], char_len, vec![]);
+                                return;
+                            }
+                            _ => {}
+                        }
+                    }
+                    ERROR
+                }
                 rustc_lexer::TokenKind::UnknownPrefix if token_text == "builtin" => IDENT,
                 rustc_lexer::TokenKind::UnknownPrefix => {
                     let has_unterminated = self.has_likely_unterminated_string();
