@@ -55,6 +55,7 @@ pub enum SyntaxKind {
     CARETEQ,
     SLASHEQ,
     STAREQ,
+    STAR2,  // ** power operator
     PERCENTEQ,
     AMP2,
     PIPE2,
@@ -544,6 +545,7 @@ impl SyntaxKind {
             CARETEQ => "^=",
             SLASHEQ => "/=",
             STAREQ => "*=",
+            STAR2 => "**",
             PERCENTEQ => "%=",
             AMP2 => "&&",
             PIPE2 => "||",
@@ -886,6 +888,7 @@ impl SyntaxKind {
                 | CARETEQ
                 | SLASHEQ
                 | STAREQ
+                | STAR2
                 | PERCENTEQ
                 | AMP2
                 | PIPE2
@@ -1080,6 +1083,7 @@ macro_rules ! T_ {
     [^=] => { $ crate :: SyntaxKind :: CARETEQ };
     [/=] => { $ crate :: SyntaxKind :: SLASHEQ };
     [*=] => { $ crate :: SyntaxKind :: STAREQ };
+    [**] => { $ crate :: SyntaxKind :: STAR2 };
     [%=] => { $ crate :: SyntaxKind :: PERCENTEQ };
     [&&] => { $ crate :: SyntaxKind :: AMP2 };
     [||] => { $ crate :: SyntaxKind :: PIPE2 };

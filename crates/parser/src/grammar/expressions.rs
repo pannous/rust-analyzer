@@ -229,6 +229,12 @@ fn current_op(p: &Parser<'_>) -> (u8, SyntaxKind, Associativity) {
         T![&]                  => (8,  T![&],   Left),
         T![/] if p.at(T![/=])  => (1,  T![/=],  Right),
         T![/]                  => (11, T![/],   Left),
+        // test power_operator
+        // fn test() {
+        //     let a = 2 ** 3;
+        //     let b = 2 ** 3 ** 4;  // right-associative: 2 ** (3 ** 4)
+        // }
+        T![*] if p.at(T![**])  => (13, T![**],  Right),  // ** power: higher than *, right-assoc
         T![*] if p.at(T![*=])  => (1,  T![*=],  Right),
         T![*]                  => (11, T![*],   Left),
         T![.] if p.at(T![..=]) => (2,  T![..=], Left),

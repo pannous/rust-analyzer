@@ -159,4 +159,41 @@ mod custom_ops_tests {
         let parse = SourceFile::parse(code, parser::Edition::CURRENT);
         assert!(parse.errors().is_empty(), "Unexpected errors: {:?}", parse.errors());
     }
+
+    // Power operator tests
+
+    #[test]
+    fn test_power_operator() {
+        // ** should be parsed as power operator
+        let code = "fn f() { let x = 2 ** 3; }";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        assert!(parse.errors().is_empty(), "Unexpected errors for **: {:?}", parse.errors());
+
+        let debug = format!("{:#?}", parse.tree().syntax());
+        assert!(debug.contains("BIN_EXPR"), "Expected BIN_EXPR for ** operator");
+    }
+
+    #[test]
+    fn test_power_right_associative() {
+        // ** should be right-associative: 2 ** 3 ** 4 = 2 ** (3 ** 4)
+        let code = "fn f() { let x = 2 ** 3 ** 4; }";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        assert!(parse.errors().is_empty(), "Unexpected errors: {:?}", parse.errors());
+    }
+
+    #[test]
+    fn test_power_precedence() {
+        // ** should have higher precedence than *
+        // 2 * 3 ** 4 should be 2 * (3 ** 4)
+        let code = "fn f() { let x = 2 * 3 ** 4; }";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        assert!(parse.errors().is_empty(), "Unexpected errors: {:?}", parse.errors());
+    }
+
+    #[test]
+    fn test_power_with_parens() {
+        let code = "fn f() { let x = (2 ** 3) * 4; }";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        assert!(parse.errors().is_empty(), "Unexpected errors: {:?}", parse.errors());
+    }
 }
