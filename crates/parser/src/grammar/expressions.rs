@@ -389,6 +389,45 @@ fn lhs(p: &mut Parser<'_>, r: Restrictions) -> Option<(CompletedMarker, BlockLik
             p.bump_any();
             PREFIX_EXPR
         }
+        // test not_prefix_operator
+        // fn foo() {
+        //     let a = not true;
+        //     let b = not not false;
+        //     let c = not a and b;
+        // }
+        // Custom operator: 'not' as prefix (alias for !)
+        // Be conservative: only treat as operator when clearly followed by an operand.
+        // Exclude '{' and '[' since they often appear as continuations (match x {, etc.)
+        SyntaxKind::IDENT if p.at_contextual_kw(T![not]) => {
+            let next = p.nth(1);
+            // Only treat as prefix operator if followed by clear unary operand starters
+            // Exclude: '.' (method call), '{' (match blocks), '[' (index), ':' (type annotation)
+            let is_prefix_op = next != T![.]
+                && next != T!['{']
+                && next != T!['[']
+                && next != T![:]
+                && next != T![,]
+                && next != T![;]
+                && next != T![')']
+                && next != T!['}']
+                && next != T![']']
+                && (p.nth_at(1, SyntaxKind::IDENT)
+                    || next.is_literal()
+                    || matches!(next, T![!] | T![-] | T![*] | T![&] | T!['(']
+                        | T![true] | T![false]));
+
+            if is_prefix_op {
+                m = p.start();
+                p.bump_remap(T![!]);  // Remap 'not' to '!'
+                PREFIX_EXPR
+            } else {
+                // Not a prefix operator, treat as identifier with postfix handling
+                let (lhs, blocklike) = atom::atom_expr(p, r)?;
+                let (cm, block_like) =
+                    postfix_expr(p, lhs, blocklike, !(r.prefer_stmt && blocklike.is_block()));
+                return Some((cm, block_like));
+            }
+        }
         _ => {
             // test full_range_expr
             // fn foo() { xs[..]; }
