@@ -203,4 +203,3 @@ error 371: expected COMMA
 error 372: expected enum variant
 error 374: expected enum variant
 error 494: expected pattern
-error 495: expected SEMICOLON

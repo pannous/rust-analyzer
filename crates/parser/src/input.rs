@@ -19,6 +19,9 @@ pub struct Input {
     joint: Vec<bits>,
     contextual_kind: Vec<SyntaxKind>,
     edition: Vec<Edition>,
+    /// Bit vector tracking whether each token was preceded by a newline.
+    /// Used for semicolon inference in custom Rust fork.
+    newline_before: Vec<bits>,
 }
 
 /// `pub` impl used by callers to create `Tokens`.
@@ -30,6 +33,7 @@ impl Input {
             joint: Vec::with_capacity(capacity / size_of::<bits>()),
             contextual_kind: Vec::with_capacity(capacity),
             edition: Vec::with_capacity(capacity),
+            newline_before: Vec::with_capacity(capacity / size_of::<bits>()),
         }
     }
     #[inline]
@@ -62,11 +66,20 @@ impl Input {
         let (idx, b_idx) = self.bit_index(n);
         self.joint[idx] |= 1 << b_idx;
     }
+    /// Marks the last pushed token as being preceded by a newline.
+    /// Used for semicolon inference in custom Rust fork.
+    #[inline]
+    pub fn had_newline(&mut self) {
+        let n = self.len() - 1;
+        let (idx, b_idx) = self.bit_index(n);
+        self.newline_before[idx] |= 1 << b_idx;
+    }
     #[inline]
     fn push_impl(&mut self, kind: SyntaxKind, contextual_kind: SyntaxKind, edition: Edition) {
         let idx = self.len();
         if idx.is_multiple_of(bits::BITS as usize) {
             self.joint.push(0);
+            self.newline_before.push(0);
         }
         self.kind.push(kind);
         self.contextual_kind.push(contextual_kind);
@@ -88,6 +101,12 @@ impl Input {
     pub(crate) fn is_joint(&self, n: usize) -> bool {
         let (idx, b_idx) = self.bit_index(n);
         self.joint[idx] & (1 << b_idx) != 0
+    }
+    /// Returns true if the token at index `n` was preceded by a newline.
+    /// Used for semicolon inference in custom Rust fork.
+    pub(crate) fn is_preceded_by_newline(&self, n: usize) -> bool {
+        let (idx, b_idx) = self.bit_index(n);
+        self.newline_before.get(idx).map_or(false, |&v| v & (1 << b_idx) != 0)
     }
 }
 

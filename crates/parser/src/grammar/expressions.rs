@@ -100,7 +100,11 @@ pub(super) fn stmt(p: &mut Parser<'_>, semicolon: Semicolon) {
                 if blocklike.is_block() {
                     p.eat(T![;]);
                 } else {
-                    p.expect(T![;]);
+                    // Custom: Allow missing semicolon if next token is on a new line
+                    // This enables semicolon inference for the custom Rust fork
+                    if !p.eat(T![;]) && !p.preceded_by_newline() {
+                        p.error("expected SEMICOLON");
+                    }
                 }
             }
             Semicolon::Optional => {
@@ -155,7 +159,11 @@ pub(super) fn let_stmt(p: &mut Parser<'_>, with_semi: Semicolon) {
             p.eat(T![;]);
         }
         Semicolon::Required => {
-            p.expect(T![;]);
+            // Custom: Allow missing semicolon if next token is on a new line
+            // This enables semicolon inference for the custom Rust fork
+            if !p.eat(T![;]) && !p.preceded_by_newline() {
+                p.error("expected SEMICOLON");
+            }
         }
     }
 }

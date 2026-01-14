@@ -21,16 +21,14 @@ SOURCE_FILE
                     IDENT "foo"
             ARG_LIST
               L_PAREN "("
-              WHITESPACE "\n        "
               LITERAL
                 INT_NUMBER "1"
               COMMA ","
               WHITESPACE " "
               LITERAL
                 INT_NUMBER "2"
-              WHITESPACE "\n    "
               R_PAREN ")"
-        WHITESPACE "\n    "
+        WHITESPACE " "
         EXPR_STMT
           RETURN_EXPR
             RETURN_KW "return"
@@ -41,4 +39,4 @@ SOURCE_FILE
         WHITESPACE "\n"
         R_CURLY "}"
   WHITESPACE "\n"
-error 38: expected SEMICOLON
+error 24: expected SEMICOLON

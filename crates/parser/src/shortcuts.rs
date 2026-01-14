@@ -29,22 +29,37 @@ impl LexedStr<'_> {
         let _p = tracing::info_span!("LexedStr::to_input").entered();
         let mut res = crate::Input::with_capacity(self.len());
         let mut was_joint = false;
+        let mut had_newline = false;  // Track newlines for semicolon inference
         for i in 0..self.len() {
             let kind = self.kind(i);
             if kind.is_trivia() {
-                was_joint = false
+                was_joint = false;
+                // Check if this trivia contains a newline
+                if kind == SyntaxKind::WHITESPACE && self.text(i).contains('\n') {
+                    had_newline = true;
+                }
             } else if kind == SyntaxKind::IDENT {
                 let token_text = self.text(i);
                 res.push_ident(
                     SyntaxKind::from_contextual_keyword(token_text, edition)
                         .unwrap_or(SyntaxKind::IDENT),
                     edition,
-                )
+                );
+                // Mark if preceded by newline
+                if had_newline {
+                    res.had_newline();
+                    had_newline = false;
+                }
             } else {
                 if was_joint {
                     res.was_joint();
                 }
                 res.push(kind, edition);
+                // Mark if preceded by newline
+                if had_newline {
+                    res.had_newline();
+                    had_newline = false;
+                }
                 // Tag the token as joint if it is float with a fractional part
                 // we use this jointness to inform the parser about what token split
                 // event to emit when we encounter a float literal in a field access

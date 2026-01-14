@@ -295,6 +295,12 @@ impl<'t> Parser<'t> {
     pub(crate) fn current_edition(&self) -> Edition {
         self.inp.edition(self.pos)
     }
+
+    /// Returns true if the current token was preceded by a newline.
+    /// Used for semicolon inference in custom Rust fork.
+    pub(crate) fn preceded_by_newline(&self) -> bool {
+        self.inp.is_preceded_by_newline(self.pos)
+    }
 }
 
 /// See [`Parser::start`].

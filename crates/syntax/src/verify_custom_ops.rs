@@ -196,4 +196,63 @@ mod custom_ops_tests {
         let parse = SourceFile::parse(code, parser::Edition::CURRENT);
         assert!(parse.errors().is_empty(), "Unexpected errors: {:?}", parse.errors());
     }
+
+    // Semicolon inference tests
+
+    #[test]
+    fn test_semicolon_inference_expr() {
+        // Expression statements should not require semicolons when on separate lines
+        let code = "fn f() {
+    let x = 1
+    let y = 2
+    x + y
+}";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        assert!(parse.errors().is_empty(), "Unexpected errors for semicolon inference: {:?}", parse.errors());
+    }
+
+    #[test]
+    fn test_semicolon_inference_let() {
+        // Let statements should not require semicolons when on separate lines
+        let code = "fn f() {
+    let x = 1
+    let y = 2
+}";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        assert!(parse.errors().is_empty(), "Unexpected errors for let statement: {:?}", parse.errors());
+    }
+
+    #[test]
+    fn test_semicolon_inference_mixed() {
+        // Mix of semicolon and no semicolon should work
+        let code = "fn f() {
+    let x = 1;
+    let y = 2
+    let z = 3;
+    x + y + z
+}";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        assert!(parse.errors().is_empty(), "Unexpected errors: {:?}", parse.errors());
+    }
+
+    #[test]
+    fn test_semicolon_still_required_same_line() {
+        // Semicolons should still be required for statements on the same line
+        let code = "fn f() { let x = 1 let y = 2 }";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        // This should have errors since there's no newline between statements
+        assert!(!parse.errors().is_empty(), "Expected errors for missing semicolon on same line");
+    }
+
+    #[test]
+    fn test_semicolon_inference_with_custom_ops() {
+        // Semicolon inference should work with custom operators
+        let code = "fn f() {
+    let a = true
+    let b = a and false
+    let c = not b
+}";
+        let parse = SourceFile::parse(code, parser::Edition::CURRENT);
+        assert!(parse.errors().is_empty(), "Unexpected errors: {:?}", parse.errors());
+    }
 }

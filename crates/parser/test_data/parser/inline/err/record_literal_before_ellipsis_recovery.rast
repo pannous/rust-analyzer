@@ -115,12 +115,9 @@ SOURCE_FILE
   WHITESPACE "\n"
 error 25: expected `:`
 error 25: expected COMMA
-error 42: expected SEMICOLON
 error 52: expected `:`
 error 52: expected COMMA
-error 69: expected SEMICOLON
 error 83: expected `:`
 error 83: expected COMMA
-error 88: expected SEMICOLON
 error 98: expected `:`
 error 98: expected COMMA
