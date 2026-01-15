@@ -26,5 +26,21 @@
             fieldName="INSTANCE"
             language="Rustx"
             extensions="rx"/>
+        <configurationType
+            implementation="com.customra.run.RustRunConfigurationType"/>
+        <runConfigurationProducer
+            implementation="com.customra.run.RustRunConfigurationProducer"/>
     </extensions>
+
+    <actions>
+        <action id="customra.run"
+                class="com.customra.run.RustRunAction"
+                text="Run with Custom Rust"
+                description="Run Rust file with custom compiler">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
+            <add-to-group group-id="RunMenu" anchor="first"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt R"/>
+        </action>
+    </actions>
 </idea-plugin>
