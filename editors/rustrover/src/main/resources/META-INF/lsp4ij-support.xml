@@ -1,0 +1,17 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
+        <server id="customRustAnalyzer"
+                name="Custom Rust Analyzer"
+                factoryClass="com.customra.CustomRustAnalyzerServerFactory">
+            <description><![CDATA[
+                Custom rust-analyzer with extended syntax support:
+                semicolon inference, ** power operator, Unicode operators,
+                'not' prefix, and/or/xor aliases.
+            ]]></description>
+        </server>
+
+        <languageMapping language="Rust"
+                         serverId="customRustAnalyzer"
+                         languageId="rust"/>
+    </extensions>
+</idea-plugin>

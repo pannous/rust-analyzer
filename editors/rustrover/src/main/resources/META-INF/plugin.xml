@@ -11,15 +11,13 @@
             <li>'not' prefix operator</li>
             <li>and/or/xor operator aliases</li>
         </ul>
-        Automatically configures the rust-analyzer server path on startup.
+        Registers as LSP server via LSP4IJ.
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
-    <depends optional="true" config-file="rust-support.xml">org.rust.lang</depends>
+    <depends optional="true" config-file="lsp4ij-support.xml">com.redhat.devtools.lsp4ij</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <postStartupActivity
-            implementation="com.customra.SettingsConfigurer"/>
         <applicationService
             serviceImplementation="com.customra.BinaryManager"/>
     </extensions>

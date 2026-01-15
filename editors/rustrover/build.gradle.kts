@@ -16,6 +16,7 @@ repositories {
 dependencies {
     intellijPlatform {
         create("RR", providers.gradleProperty("platformVersion").get())
+        plugin("com.redhat.devtools.lsp4ij", "0.19.1")
     }
 }
 
