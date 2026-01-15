@@ -10,7 +10,7 @@
             ]]></description>
         </server>
 
-        <languageMapping language="Rust"
+        <languageMapping language="Rustx"
                          serverId="customRustAnalyzer"
                          languageId="rust"/>
     </extensions>

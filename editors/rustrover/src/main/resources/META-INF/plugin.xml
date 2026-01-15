@@ -20,5 +20,11 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationService
             serviceImplementation="com.customra.BinaryManager"/>
+        <fileType
+            name="Rustx"
+            implementationClass="com.customra.RustxFileType"
+            fieldName="INSTANCE"
+            language="Rustx"
+            extensions="rx"/>
     </extensions>
 </idea-plugin>
