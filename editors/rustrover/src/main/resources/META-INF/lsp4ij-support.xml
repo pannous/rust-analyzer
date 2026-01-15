@@ -13,5 +13,22 @@
         <languageMapping language="Rustx"
                          serverId="customRustAnalyzer"
                          languageId="rust"/>
+
+        <!-- File pattern mappings for custom extensions -->
+        <fileNamePatternMapping pattern="*.rx"
+                                serverId="customRustAnalyzer"
+                                languageId="rust"/>
+        <fileNamePatternMapping pattern="*.roo"
+                                serverId="customRustAnalyzer"
+                                languageId="rust"/>
+        <fileNamePatternMapping pattern="*.🦀"
+                                serverId="customRustAnalyzer"
+                                languageId="rust"/>
+        <fileNamePatternMapping pattern="*.🐓"
+                                serverId="customRustAnalyzer"
+                                languageId="rust"/>
+        <fileNamePatternMapping pattern="*.🦘"
+                                serverId="customRustAnalyzer"
+                                languageId="rust"/>
     </extensions>
 </idea-plugin>

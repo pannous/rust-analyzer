@@ -1,8 +1,9 @@
 package com.customra.run
 
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.FormBuilder
@@ -14,12 +15,14 @@ class RustRunConfigurationEditor : SettingsEditor<RustRunConfiguration>() {
     private val argumentsField = JBTextField()
 
     init {
-        scriptPathField.addBrowseFolderListener(
-            "Select Rust File",
-            "Select the Rust file to run",
-            null,
-            FileChooserDescriptorFactory.createSingleFileDescriptor("rs")
-        )
+        val descriptor = object : FileChooserDescriptor(true, false, false, false, false, false) {
+            override fun isFileSelectable(file: VirtualFile?): Boolean {
+                return file?.extension in RustRunConfigurationProducer.RUST_EXTENSIONS
+            }
+        }.withTitle("Select Rust File")
+         .withDescription("Select the Rust file to run (.rs, .rx, .roo, .🦀, .🐓, .🦘)")
+
+        scriptPathField.addBrowseFolderListener(null, descriptor)
     }
 
     override fun createEditor(): JComponent {

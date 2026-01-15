@@ -13,7 +13,7 @@ class RustRunAction : AnAction("Run with Custom Rust") {
         val project = e.project ?: return
         val file = e.getData(CommonDataKeys.VIRTUAL_FILE) ?: return
 
-        if (file.extension != "rs") return
+        if (file.extension !in RustRunConfigurationProducer.RUST_EXTENSIONS) return
 
         val runManager = RunManager.getInstance(project)
         val factory = RustRunConfigurationType.getInstance().configurationFactories[0]
@@ -29,6 +29,6 @@ class RustRunAction : AnAction("Run with Custom Rust") {
 
     override fun update(e: AnActionEvent) {
         val file = e.getData(CommonDataKeys.VIRTUAL_FILE)
-        e.presentation.isEnabledAndVisible = file?.extension == "rs"
+        e.presentation.isEnabledAndVisible = file?.extension in RustRunConfigurationProducer.RUST_EXTENSIONS
     }
 }

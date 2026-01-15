@@ -8,6 +8,10 @@ import com.intellij.psi.PsiElement
 
 class RustRunConfigurationProducer : LazyRunConfigurationProducer<RustRunConfiguration>() {
 
+    companion object {
+        val RUST_EXTENSIONS = setOf("rs", "rx", "roo", "🦀", "🐓", "🦘")
+    }
+
     override fun getConfigurationFactory(): ConfigurationFactory {
         return RustRunConfigurationType.getInstance().configurationFactories[0]
     }
@@ -17,7 +21,7 @@ class RustRunConfigurationProducer : LazyRunConfigurationProducer<RustRunConfigu
         context: ConfigurationContext
     ): Boolean {
         val file = context.location?.virtualFile ?: return false
-        return file.extension == "rs" && configuration.scriptPath == file.path
+        return file.extension in RUST_EXTENSIONS && configuration.scriptPath == file.path
     }
 
     override fun setupConfigurationFromContext(
@@ -26,7 +30,7 @@ class RustRunConfigurationProducer : LazyRunConfigurationProducer<RustRunConfigu
         sourceElement: Ref<PsiElement>
     ): Boolean {
         val file = context.location?.virtualFile ?: return false
-        if (file.extension != "rs") return false
+        if (file.extension !in RUST_EXTENSIONS) return false
 
         configuration.scriptPath = file.path
         configuration.name = "Run ${file.nameWithoutExtension}"
