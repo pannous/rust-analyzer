@@ -51,34 +51,19 @@ class RustRunConfiguration(
         return object : CommandLineState(environment) {
             override fun startProcess(): ProcessHandler {
                 val rustc = findCustomRustc()
-                val outputPath = scriptPath.replace(".rs", "")
+                val file = File(scriptPath)
+                val outputPath = File(file.parent, file.nameWithoutExtension).absolutePath
+                val workDir = file.parent
 
-                // Compile
-                val compile = GeneralCommandLine()
-                    .withExePath(rustc)
-                    .withParameters(scriptPath, "-o", outputPath)
-                    .withWorkDirectory(File(scriptPath).parent)
+                // Combine compile and run into single shell command to avoid blocking EDT
+                val runArgs = if (arguments.isNotBlank()) " $arguments" else ""
+                val shellCommand = "\"$rustc\" \"$scriptPath\" -o \"$outputPath\" && \"$outputPath\"$runArgs"
 
-                val compileHandler = ProcessHandlerFactory.getInstance()
-                    .createColoredProcessHandler(compile)
-                compileHandler.startNotify()
-                compileHandler.waitFor()
-
-                if (compileHandler.exitCode != 0) {
-                    return compileHandler
-                }
-
-                // Run
-                val run = GeneralCommandLine()
-                    .withExePath(outputPath)
-                    .withWorkDirectory(File(scriptPath).parent)
-
-                if (arguments.isNotBlank()) {
-                    run.withParameters(arguments.split(" "))
-                }
+                val commandLine = GeneralCommandLine("sh", "-c", shellCommand)
+                    .withWorkDirectory(workDir)
 
                 val handler = ProcessHandlerFactory.getInstance()
-                    .createColoredProcessHandler(run)
+                    .createColoredProcessHandler(commandLine)
                 ProcessTerminatedListener.attach(handler)
                 return handler
             }
