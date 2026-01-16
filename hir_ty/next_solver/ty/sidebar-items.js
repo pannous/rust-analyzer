@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["BoundTyKind"],"fn":["references_non_lt_error"],"struct":["BoundTy","ErrorGuaranteed","ParamTy","ReferencesNonLifetimeError","StoredTy","StoredTys","Ty","TyInterned","Tys","TysStorage"],"type":["FnHeader","PlaceholderTy","SimplifiedType","TyKind"]};
