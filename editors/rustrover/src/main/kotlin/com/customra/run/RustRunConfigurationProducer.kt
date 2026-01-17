@@ -1,6 +1,8 @@
 package com.customra.run
 
+import com.intellij.execution.RunManager
 import com.intellij.execution.actions.ConfigurationContext
+import com.intellij.execution.actions.ConfigurationFromContext
 import com.intellij.execution.actions.LazyRunConfigurationProducer
 import com.intellij.execution.configurations.ConfigurationFactory
 import com.intellij.openapi.util.Ref
@@ -35,5 +37,15 @@ class RustRunConfigurationProducer : LazyRunConfigurationProducer<RustRunConfigu
         configuration.scriptPath = file.path
         configuration.name = "Run ${file.nameWithoutExtension}"
         return true
+    }
+
+    override fun onFirstRun(configuration: ConfigurationFromContext, context: ConfigurationContext, startRunnable: Runnable) {
+        val runManager = RunManager.getInstance(context.project)
+        val settings = configuration.configurationSettings
+        if (!runManager.hasSettings(settings)) {
+            runManager.addConfiguration(settings)
+        }
+        runManager.selectedConfiguration = settings
+        startRunnable.run()
     }
 }
