@@ -50,14 +50,8 @@ class RustRunConfiguration(
     override fun getState(executor: Executor, environment: ExecutionEnvironment): RunProfileState {
         return object : CommandLineState(environment) {
             override fun startProcess(): ProcessHandler {
-                val rustc = findCustomRustc()
                 val file = File(scriptPath)
-                val outputPath = File(file.parent, file.nameWithoutExtension).absolutePath
-                val workDir = file.parent
-
-                // Combine compile and run into single shell command to avoid blocking EDT
-                val runArgs = if (arguments.isNotBlank()) " $arguments" else ""
-                val shellCommand = "\"$rustc\" \"$scriptPath\" -o \"$outputPath\" && \"$outputPath\"$runArgs"
+                val (shellCommand, workDir) = buildCommand(file)
 
                 val commandLine = GeneralCommandLine("sh", "-c", shellCommand)
                     .withWorkDirectory(workDir)
@@ -70,6 +64,39 @@ class RustRunConfiguration(
         }
     }
 
+    private fun buildCommand(file: File): Pair<String, String> {
+        // Check if this is a test file in tests/ directory
+        val testInfo = findTestContext(file)
+        if (testInfo != null) {
+            val (cargoDir, testName) = testInfo
+            val cargo = findCustomCargo()
+            val runArgs = if (arguments.isNotBlank()) " -- $arguments" else ""
+            return Pair("\"$cargo\" test --test $testName$runArgs", cargoDir)
+        }
+
+        // Regular file: compile and run with rustc
+        val rustc = findCustomRustc()
+        val outputPath = File(file.parent, file.nameWithoutExtension).absolutePath
+        val runArgs = if (arguments.isNotBlank()) " $arguments" else ""
+        return Pair("\"$rustc\" \"$scriptPath\" -o \"$outputPath\" && \"$outputPath\"$runArgs", file.parent)
+    }
+
+    private fun findTestContext(file: File): Pair<String, String>? {
+        // Walk up looking for tests/ directory with Cargo.toml in parent
+        var current = file.parentFile
+        while (current != null) {
+            if (current.name == "tests") {
+                val cargoDir = current.parentFile
+                if (cargoDir != null && File(cargoDir, "Cargo.toml").exists()) {
+                    val testName = file.nameWithoutExtension
+                    return Pair(cargoDir.absolutePath, testName)
+                }
+            }
+            current = current.parentFile
+        }
+        return null
+    }
+
     private fun findCustomRustc(): String {
         val customPaths = listOf(
             "/opt/other/rust/build/aarch64-apple-darwin/stage1/bin/rustc",
@@ -78,5 +105,15 @@ class RustRunConfiguration(
         )
         return customPaths.firstOrNull { File(it).exists() }
             ?: "rustc" // fallback to PATH
+    }
+
+    private fun findCustomCargo(): String {
+        val customPaths = listOf(
+            "/opt/other/rust/build/aarch64-apple-darwin/stage1/bin/cargo",
+            "/opt/other/rust/build/host/stage1/bin/cargo",
+            System.getProperty("user.home") + "/.rustup/toolchains/custom-rust/bin/cargo"
+        )
+        return customPaths.firstOrNull { File(it).exists() }
+            ?: "cargo" // fallback to PATH
     }
 }
