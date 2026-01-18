@@ -20,6 +20,8 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationService
             serviceImplementation="com.customra.BinaryManager"/>
+        <consoleFilterProvider
+            implementation="com.customra.run.RustcConsoleFilterProvider"/>
         <fileType
             name="Rustx"
             implementationClass="com.customra.RustxFileType"
