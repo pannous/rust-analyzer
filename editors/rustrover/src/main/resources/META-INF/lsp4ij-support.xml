@@ -15,7 +15,7 @@
                          languageId="rust"/>
 
         <!-- File pattern mappings for custom extensions -->
-        <fileNamePatternMapping patterns="*.rx;*.roo;*.🦀;*.🐓;*.🦘"
+        <fileNamePatternMapping patterns="*.rust;*.rx;*.roo;*.🦀;*.🐓;*.🦘"
                                 serverId="customRustAnalyzer"
                                 languageId="rust"/>
     </extensions>
