@@ -32,12 +32,23 @@
             implementation="com.customra.run.RustRunConfigurationType"/>
         <runConfigurationProducer
             implementation="com.customra.run.RustRunConfigurationProducer"/>
+        <lang.parserDefinition
+            language="Rustx"
+            implementationClass="com.customra.RustxParserDefinition"/>
         <lang.commenter
             language="Rustx"
             implementationClass="com.customra.RustxCommenter"/>
+        <lang.syntaxHighlighterFactory
+            language="Rustx"
+            implementationClass="com.customra.RustxSyntaxHighlighterFactory"/>
     </extensions>
 
     <actions>
+        <action id="customra.toggleComment"
+                class="com.customra.RustxCommentAction"
+                text="Toggle Comment"
+                description="Toggle line comment (// and # support)"
+                use-shortcut-of="CommentByLineComment"/>
         <action id="customra.run"
                 class="com.customra.run.RustRunAction"
                 text="Run with Custom Rust"
@@ -46,13 +57,6 @@
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
             <add-to-group group-id="RunMenu" anchor="first"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt R"/>
-        </action>
-        <action id="customra.comment"
-                class="com.customra.RustxCommentAction"
-                text="Toggle Comment"
-                description="Toggle line comment (supports // and # prefixes)">
-            <keyboard-shortcut keymap="$default" first-keystroke="meta SLASH"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="ctrl SLASH"/>
         </action>
     </actions>
 </idea-plugin>

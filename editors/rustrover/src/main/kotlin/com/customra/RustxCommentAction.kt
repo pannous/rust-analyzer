@@ -4,13 +4,13 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
-import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.util.TextRange
 
 /**
  * Custom comment toggle action that supports both // and # as comment prefixes.
- * Commenting adds //, uncommenting removes // or # (at line start or after up to 2 spaces).
+ * - Commenting adds "// "
+ * - Uncommenting removes "// " or "# " (only at line start or within 2 leading spaces)
  */
 class RustxCommentAction : AnAction() {
 
@@ -20,17 +20,38 @@ class RustxCommentAction : AnAction() {
         val document = editor.document
         val file = e.getData(CommonDataKeys.PSI_FILE) ?: return
 
-        // Only handle our file types
         if (!isRustxFile(file.name)) return
 
         WriteCommandAction.runWriteCommandAction(project) {
-            val caret = editor.caretModel.primaryCaret
             val selectionModel = editor.selectionModel
+            val startLine: Int
+            val endLine: Int
 
             if (selectionModel.hasSelection()) {
-                toggleCommentForSelection(document, selectionModel.selectionStart, selectionModel.selectionEnd)
+                startLine = document.getLineNumber(selectionModel.selectionStart)
+                endLine = document.getLineNumber(selectionModel.selectionEnd)
             } else {
-                toggleCommentForLine(document, caret.logicalPosition.line)
+                val line = editor.caretModel.logicalPosition.line
+                startLine = line
+                endLine = line
+            }
+
+            // Check if all non-blank lines are commented
+            val allCommented = (startLine..endLine).all { line ->
+                val text = getLineText(document, line)
+                text.isBlank() || isLineCommented(text)
+            }
+
+            // Process lines in reverse to preserve line numbers during edits
+            for (line in endLine downTo startLine) {
+                val lineText = getLineText(document, line)
+                if (lineText.isBlank()) continue
+
+                if (allCommented) {
+                    uncommentLine(document, line, lineText)
+                } else {
+                    commentLine(document, line, lineText)
+                }
             }
         }
     }
@@ -42,75 +63,48 @@ class RustxCommentAction : AnAction() {
 
     private fun isRustxFile(name: String): Boolean {
         val ext = name.substringAfterLast('.', "")
-        return ext in setOf("rust", "rx", "roo", "🦀", "🐓", "🦘") ||
-               name.endsWith(".rs") // include .rs for consistency
+        return ext in setOf("rust", "rx", "roo", "🦀", "🐓", "🦘")
     }
 
-    private fun toggleCommentForSelection(document: Document, start: Int, end: Int) {
-        val startLine = document.getLineNumber(start)
-        val endLine = document.getLineNumber(end)
-
-        // Check if all lines are commented
-        val allCommented = (startLine..endLine).all { isLineCommented(document, it) }
-
-        for (line in startLine..endLine) {
-            if (allCommented) {
-                uncommentLine(document, line)
-            } else {
-                commentLine(document, line)
-            }
-        }
+    private fun getLineText(document: Document, line: Int): String {
+        val start = document.getLineStartOffset(line)
+        val end = document.getLineEndOffset(line)
+        return document.getText(TextRange(start, end))
     }
 
-    private fun toggleCommentForLine(document: Document, line: Int) {
-        if (isLineCommented(document, line)) {
-            uncommentLine(document, line)
-        } else {
-            commentLine(document, line)
-        }
-    }
-
-    private fun isLineCommented(document: Document, line: Int): Boolean {
-        val lineStart = document.getLineStartOffset(line)
-        val lineEnd = document.getLineEndOffset(line)
-        val lineText = document.getText(com.intellij.openapi.util.TextRange(lineStart, lineEnd))
+    private fun isLineCommented(lineText: String): Boolean {
         val trimmed = lineText.trimStart()
-        return trimmed.startsWith("//") || trimmed.startsWith("#")
+        if (trimmed.startsWith("//")) return true
+        // Check for # at start or within 2 spaces
+        val match = Regex("^\\s{0,2}#").find(lineText)
+        return match != null
     }
 
-    private fun commentLine(document: Document, line: Int) {
+    private fun commentLine(document: Document, line: Int, lineText: String) {
         val lineStart = document.getLineStartOffset(line)
-        val lineEnd = document.getLineEndOffset(line)
-        val lineText = document.getText(com.intellij.openapi.util.TextRange(lineStart, lineEnd))
-
-        if (lineText.isBlank()) return
-
-        // Find the indentation
         val indent = lineText.takeWhile { it == ' ' || it == '\t' }
         document.insertString(lineStart + indent.length, "// ")
     }
 
-    private fun uncommentLine(document: Document, line: Int) {
+    private fun uncommentLine(document: Document, line: Int, lineText: String) {
         val lineStart = document.getLineStartOffset(line)
-        val lineEnd = document.getLineEndOffset(line)
-        val lineText = document.getText(com.intellij.openapi.util.TextRange(lineStart, lineEnd))
 
-        // Match patterns: "// ", "//", "# ", "#" at start or after whitespace (up to 2 spaces)
-        val patterns = listOf(
-            Regex("^(\\s{0,2})// "),  // "// " with optional leading space (0-2)
-            Regex("^(\\s{0,2})//"),    // "//" with optional leading space (0-2)
-            Regex("^(\\s{0,2})# "),    // "# " with optional leading space (0-2)
-            Regex("^(\\s{0,2})#"),     // "#" with optional leading space (0-2)
-        )
+        // Try to match and remove comment prefixes
+        // Pattern 1: "// " or "//" at any indentation level
+        val slashMatch = Regex("^(\\s*)// ?").find(lineText)
+        if (slashMatch != null) {
+            val prefixEnd = slashMatch.range.last + 1
+            document.deleteString(lineStart + slashMatch.groupValues[1].length, lineStart + prefixEnd)
+            return
+        }
 
-        for (pattern in patterns) {
-            val match = pattern.find(lineText)
-            if (match != null) {
-                val leadingWhitespace = match.groupValues[1]
-                val toRemove = match.value.length - leadingWhitespace.length
-                document.deleteString(lineStart + leadingWhitespace.length, lineStart + leadingWhitespace.length + toRemove)
-                return
-            }
+        // Pattern 2: "# " or "#" only within first 2 spaces
+        val hashMatch = Regex("^(\\s{0,2})# ?").find(lineText)
+        if (hashMatch != null) {
+            val indent = hashMatch.groupValues[1]
+            val prefixEnd = hashMatch.range.last + 1
+            document.deleteString(lineStart + indent.length, lineStart + prefixEnd)
+            return
         }
     }
 }
