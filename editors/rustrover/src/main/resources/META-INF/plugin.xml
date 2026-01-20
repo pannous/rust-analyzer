@@ -47,5 +47,12 @@
             <add-to-group group-id="RunMenu" anchor="first"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt R"/>
         </action>
+        <action id="customra.comment"
+                class="com.customra.RustxCommentAction"
+                text="Toggle Comment"
+                description="Toggle line comment (supports // and # prefixes)">
+            <keyboard-shortcut keymap="$default" first-keystroke="meta SLASH"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl SLASH"/>
+        </action>
     </actions>
 </idea-plugin>
