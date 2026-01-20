@@ -11,7 +11,7 @@ import com.intellij.psi.PsiElement
 class RustRunConfigurationProducer : LazyRunConfigurationProducer<RustRunConfiguration>() {
 
     companion object {
-        val RUST_EXTENSIONS = setOf("rs", "rx", "roo", "🦀", "🐓", "🦘")
+        val RUST_EXTENSIONS = setOf("rs", "rust", "rx", "roo", "🦀", "🐓", "🦘")
     }
 
     override fun getConfigurationFactory(): ConfigurationFactory {
