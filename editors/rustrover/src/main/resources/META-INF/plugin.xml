@@ -32,6 +32,9 @@
             implementation="com.customra.run.RustRunConfigurationType"/>
         <runConfigurationProducer
             implementation="com.customra.run.RustRunConfigurationProducer"/>
+        <lang.commenter
+            language="Rustx"
+            implementationClass="com.customra.RustxCommenter"/>
     </extensions>
 
     <actions>
