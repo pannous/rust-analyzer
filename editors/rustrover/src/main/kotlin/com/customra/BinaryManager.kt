@@ -20,9 +20,8 @@ class BinaryManager {
 
     fun getBinaryPath(): Path {
         val binaryPath = installDir.resolve(binaryName)
-        if (!Files.exists(binaryPath)) {
-            extractBinary(binaryPath)
-        }
+        // Always extract to ensure we have the latest version from the plugin
+        extractBinary(binaryPath)
         return binaryPath
     }
 
