@@ -9,6 +9,8 @@ pub(super) const TYPE_FIRST: TokenSet = paths::PATH_FIRST.union(TokenSet::new(&[
     T![&],
     T![_],
     T![fn],
+    T![def],
+    T![fun],
     T![unsafe],
     T![extern],
     T![for],
@@ -48,7 +50,7 @@ fn type_with_bounds_cond(p: &mut Parser<'_>, allow_bounds: bool) {
         T!['['] => array_or_slice_type(p),
         T![&] => ref_type(p),
         T![_] => infer_type(p),
-        T![fn] | T![unsafe] | T![extern] => fn_ptr_type(p),
+        T![fn] | T![def] | T![fun] | T![unsafe] | T![extern] => fn_ptr_type(p),
         T![for] => for_type(p, allow_bounds),
         T![impl] => impl_trait_type(p),
         T![dyn] => dyn_trait_type(p),
@@ -234,7 +236,7 @@ fn fn_ptr_type(p: &mut Parser<'_>) {
     }
     // test_err fn_pointer_type_missing_fn
     // type F = unsafe ();
-    if !p.eat(T![fn]) {
+    if !(p.eat(T![fn]) || p.eat(T![def]) || p.eat(T![fun])) {
         m.abandon(p);
         p.error("expected `fn`");
         return;
@@ -270,7 +272,7 @@ pub(super) fn for_type(p: &mut Parser<'_>, allow_bounds: bool) {
     let m = p.start();
     for_binder(p);
     match p.current() {
-        T![fn] | T![unsafe] | T![extern] => {}
+        T![fn] | T![def] | T![fun] | T![unsafe] | T![extern] => {}
         // OK: legacy trait object format
         _ if paths::is_use_path_start(p) => {}
         _ => {

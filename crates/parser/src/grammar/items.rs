@@ -178,7 +178,7 @@ pub(super) fn opt_item(p: &mut Parser<'_>, m: Marker, is_in_extern: bool) -> Res
     // default impl T for Foo {}
     if p.at_contextual_kw(T![default]) {
         match p.nth(1) {
-            T![fn] | T![type] | T![const] | T![impl] => {
+            T![fn] | T![def] | T![fun] | T![type] | T![const] | T![impl] => {
                 p.bump_remap(T![default]);
                 has_mods = true;
             }
@@ -186,7 +186,7 @@ pub(super) fn opt_item(p: &mut Parser<'_>, m: Marker, is_in_extern: bool) -> Res
             // default unsafe impl T for Foo {
             //     default unsafe fn foo() {}
             // }
-            T![unsafe] if matches!(p.nth(2), T![impl] | T![fn]) => {
+            T![unsafe] if matches!(p.nth(2), T![impl] | T![fn] | T![def] | T![fun]) => {
                 p.bump_remap(T![default]);
                 p.bump(T![unsafe]);
                 has_mods = true;
@@ -196,7 +196,7 @@ pub(super) fn opt_item(p: &mut Parser<'_>, m: Marker, is_in_extern: bool) -> Res
             //     default async fn foo() {}
             // }
             T![async]
-                if p.nth_at(2, T![fn]) || (p.nth_at(2, T![unsafe]) && p.nth_at(3, T![fn])) =>
+                if is_fn_like(p.nth(2)) || (p.nth_at(2, T![unsafe]) && is_fn_like(p.nth(3))) =>
             {
                 p.bump_remap(T![default]);
                 p.bump(T![async]);
@@ -215,7 +215,7 @@ pub(super) fn opt_item(p: &mut Parser<'_>, m: Marker, is_in_extern: bool) -> Res
 
     // items
     match p.current() {
-        T![fn] => fn_(p, m),
+        T![fn] | T![def] | T![fun] => fn_(p, m),
 
         T![const] if p.nth(1) != T!['{'] => consts::konst(p, m),
         T![static] if matches!(p.nth(1), IDENT | T![_] | T![mut]) => consts::static_(p, m),
@@ -413,8 +413,12 @@ fn macro_def(p: &mut Parser<'_>, m: Marker) {
 
 // test fn_
 // fn foo() {}
+// def bar() {}
+// fun baz() {}
 fn fn_(p: &mut Parser<'_>, m: Marker) {
-    p.bump(T![fn]);
+    // Accept fn, def, or fun as function keywords
+    assert!(is_fn_like(p.current()));
+    p.bump_any();
 
     name_r(p, ITEM_RECOVERY_SET);
     // test function_type_params
