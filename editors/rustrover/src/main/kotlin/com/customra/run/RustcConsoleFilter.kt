@@ -19,9 +19,9 @@ class RustcConsoleFilterProvider : ConsoleFilterProvider {
 
 class RustcConsoleFilter(private val project: Project) : Filter {
 
-    // Matches: --> /path/to/file.rs:line:column
+    // Matches: --> /path/to/file.rs:line:column or .rust extension
     // Also matches without arrow: /path/to/file.rs:line:column
-    private val pattern = Regex("""(?:-->\s*)?(/[^\s:]+\.rs):(\d+):(\d+)""")
+    private val pattern = Regex("""(?:-->\s*)?(/[^\s:]+\.rust?):(\d+):(\d+)""")
 
     override fun applyFilter(line: String, entireLength: Int): Filter.Result? {
         val lineStart = entireLength - line.length
