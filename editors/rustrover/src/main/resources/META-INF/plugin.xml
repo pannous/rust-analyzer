@@ -27,7 +27,7 @@
             implementationClass="com.customra.RustxFileType"
             fieldName="INSTANCE"
             language="Rustx"
-            extensions="rs;rust;rx;roo;🦀;🐓;🦘"/>
+            extensions="rust;rx;roo;🦀;🐓;🦘"/>
         <configurationType
             implementation="com.customra.run.RustRunConfigurationType"/>
         <runConfigurationProducer
