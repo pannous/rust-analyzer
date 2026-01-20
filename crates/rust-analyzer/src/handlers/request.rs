@@ -2344,6 +2344,166 @@ fn should_skip_target(runnable: &Runnable, cargo_spec: Option<&TargetSpec>) -> b
     }
 }
 
+/// Wrap top-level statements in a dummy function so rustfmt can process them.
+/// Returns (wrapped_content, needs_unwrap).
+fn wrap_toplevel_statements_for_format(file: &str) -> (String, bool) {
+    // Check if file has top-level statements (not just items like fn, struct, etc.)
+    // Simple heuristic: if there are statements that look like expressions/calls at indent 0
+    // that aren't part of a function definition
+    let has_toplevel_stmts = file.lines().any(|line| {
+        let trimmed = line.trim();
+        // Skip empty lines, comments, and item definitions
+        if trimmed.is_empty()
+            || trimmed.starts_with("//")
+            || trimmed.starts_with("/*")
+            || trimmed.starts_with("fn ")
+            || trimmed.starts_with("pub fn ")
+            || trimmed.starts_with("async fn ")
+            || trimmed.starts_with("pub async fn ")
+            || trimmed.starts_with("struct ")
+            || trimmed.starts_with("pub struct ")
+            || trimmed.starts_with("enum ")
+            || trimmed.starts_with("pub enum ")
+            || trimmed.starts_with("impl ")
+            || trimmed.starts_with("trait ")
+            || trimmed.starts_with("pub trait ")
+            || trimmed.starts_with("mod ")
+            || trimmed.starts_with("pub mod ")
+            || trimmed.starts_with("use ")
+            || trimmed.starts_with("pub use ")
+            || trimmed.starts_with("const ")
+            || trimmed.starts_with("pub const ")
+            || trimmed.starts_with("static ")
+            || trimmed.starts_with("pub static ")
+            || trimmed.starts_with("type ")
+            || trimmed.starts_with("pub type ")
+            || trimmed.starts_with("extern ")
+            || trimmed.starts_with("#[")
+            || trimmed.starts_with("#![")
+            || trimmed.starts_with("}")
+            || trimmed.starts_with("{")
+        {
+            return false;
+        }
+        // Check if line starts at column 0 (no indentation) - likely a top-level statement
+        !line.starts_with(' ') && !line.starts_with('\t')
+    });
+
+    if !has_toplevel_stmts {
+        return (file.to_string(), false);
+    }
+
+    // Split file into items (fn, struct, etc.) and top-level statements
+    let mut items = String::new();
+    let mut stmts = String::new();
+    let mut in_item = false;
+    let mut brace_depth: i32 = 0;
+
+    for line in file.lines() {
+        let trimmed = line.trim();
+
+        // Track brace depth to know when we're inside an item
+        for ch in line.chars() {
+            match ch {
+                '{' => brace_depth += 1,
+                '}' => brace_depth = brace_depth.saturating_sub(1),
+                _ => {}
+            }
+        }
+
+        // Detect start of items
+        if brace_depth == 0 || (brace_depth == 1 && trimmed.contains('{')) {
+            let is_item_start = trimmed.starts_with("fn ")
+                || trimmed.starts_with("pub fn ")
+                || trimmed.starts_with("async fn ")
+                || trimmed.starts_with("pub async fn ")
+                || trimmed.starts_with("struct ")
+                || trimmed.starts_with("pub struct ")
+                || trimmed.starts_with("enum ")
+                || trimmed.starts_with("pub enum ")
+                || trimmed.starts_with("impl ")
+                || trimmed.starts_with("trait ")
+                || trimmed.starts_with("pub trait ")
+                || trimmed.starts_with("mod ")
+                || trimmed.starts_with("pub mod ")
+                || trimmed.starts_with("const ")
+                || trimmed.starts_with("pub const ")
+                || trimmed.starts_with("static ")
+                || trimmed.starts_with("pub static ")
+                || trimmed.starts_with("type ")
+                || trimmed.starts_with("pub type ")
+                || trimmed.starts_with("extern ");
+
+            if is_item_start {
+                in_item = true;
+            }
+        }
+
+        if in_item {
+            items.push_str(line);
+            items.push('\n');
+            if brace_depth == 0 && !trimmed.is_empty() {
+                in_item = false;
+            }
+        } else if trimmed.starts_with("use ")
+            || trimmed.starts_with("pub use ")
+            || trimmed.starts_with("#[")
+            || trimmed.starts_with("#![")
+        {
+            items.push_str(line);
+            items.push('\n');
+        } else if !trimmed.is_empty() {
+            // Indent statements for the wrapper function
+            stmts.push_str("    ");
+            stmts.push_str(line.trim());
+            stmts.push('\n');
+        }
+    }
+
+    if stmts.is_empty() {
+        return (file.to_string(), false);
+    }
+
+    let wrapped = format!("{}fn __rustfmt_wrapper__() {{\n{}}}\n", items, stmts);
+    (wrapped, true)
+}
+
+/// Extract the formatted code from the wrapper function.
+fn unwrap_toplevel_statements_after_format(formatted: &str) -> String {
+    let mut result = String::new();
+    let mut in_wrapper = false;
+    let mut past_wrapper = false;
+
+    for line in formatted.lines() {
+        let trimmed = line.trim();
+
+        if trimmed.starts_with("fn __rustfmt_wrapper__()") {
+            in_wrapper = true;
+            continue;
+        }
+
+        if in_wrapper {
+            if trimmed == "}" {
+                in_wrapper = false;
+                past_wrapper = true;
+                continue;
+            }
+            // Remove one level of indentation (4 spaces)
+            if line.starts_with("    ") {
+                result.push_str(&line[4..]);
+            } else {
+                result.push_str(line);
+            }
+            result.push('\n');
+        } else if !past_wrapper || !trimmed.is_empty() {
+            result.push_str(line);
+            result.push('\n');
+        }
+    }
+
+    result
+}
+
 fn run_rustfmt(
     snap: &GlobalStateSnapshot,
     text_document: TextDocumentIdentifier,
@@ -2457,6 +2617,9 @@ fn run_rustfmt(
         }
     };
 
+    // For files with top-level statements (custom Rust syntax), wrap in dummy fn for rustfmt
+    let (file_to_format, needs_unwrap) = wrap_toplevel_statements_for_format(&file);
+
     let output = {
         let _p = tracing::info_span!("rustfmt", ?command).entered();
 
@@ -2467,12 +2630,17 @@ fn run_rustfmt(
             .spawn()
             .context(format!("Failed to spawn {command:?}"))?;
 
-        rustfmt.stdin.as_mut().unwrap().write_all(file.as_bytes())?;
+        rustfmt.stdin.as_mut().unwrap().write_all(file_to_format.as_bytes())?;
 
         rustfmt.wait_with_output()?
     };
 
     let captured_stdout = String::from_utf8(output.stdout)?;
+    let captured_stdout = if needs_unwrap {
+        unwrap_toplevel_statements_after_format(&captured_stdout)
+    } else {
+        captured_stdout
+    };
     let captured_stderr = String::from_utf8(output.stderr).unwrap_or_default();
 
     if !output.status.success() {

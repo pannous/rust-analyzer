@@ -587,7 +587,7 @@ impl GlobalState {
         self.update_status_or_notify();
 
         let loop_duration = loop_start.elapsed();
-        if loop_duration > Duration::from_millis(100) && was_quiescent {
+        if loop_duration > Duration::from_millis(200) && was_quiescent {
             tracing::warn!(
                 "overly long loop turn took {loop_duration:?} (event handling took {event_handling_duration:?}): {event_dbg_msg}"
             );
