@@ -76,7 +76,8 @@ class RustRunConfiguration(
 
         // Regular file: compile and run with rustc
         val rustc = findCustomRustc()
-        val tempDir = System.getProperty("java.io.tmpdir")
+        val tempDir = File(file.parent, "tmp")
+        tempDir.mkdirs()
         val outputPath = File(tempDir, file.nameWithoutExtension).absolutePath
         val runArgs = if (arguments.isNotBlank()) " $arguments" else ""
         return Pair("\"$rustc\" \"$scriptPath\" -o \"$outputPath\" && \"$outputPath\"$runArgs", file.parent)
