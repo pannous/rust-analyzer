@@ -11,6 +11,11 @@ pub(crate) use self::{
 };
 use super::*;
 
+// Check if the given SyntaxKind is a function keyword (fn, def, or fun)
+fn is_fn_like(kind: SyntaxKind) -> bool {
+    matches!(kind, T![fn] | T![def] | T![fun])
+}
+
 // test mod_contents
 // fn foo() {}
 // macro_rules! foo {}
@@ -27,6 +32,8 @@ pub(super) fn mod_contents(p: &mut Parser<'_>, stop_on_r_curly: bool) {
 
 pub(super) const ITEM_RECOVERY_SET: TokenSet = TokenSet::new(&[
     T![fn],
+    T![def],
+    T![fun],
     T![struct],
     T![enum],
     T![impl],
@@ -129,7 +136,7 @@ pub(super) fn opt_item(p: &mut Parser<'_>, m: Marker, is_in_extern: bool) -> Res
     // fn foo() { let _ = async {} }
     if p.at(T![async])
         && (!matches!(p.nth(1), T!['{'] | T![gen] | T![move] | T![|])
-            || matches!((p.nth(1), p.nth(2)), (T![gen], T![fn])))
+            || (p.nth(1) == T![gen] && is_fn_like(p.nth(2))))
     {
         p.eat(T![async]);
         has_mods = true;
@@ -138,7 +145,7 @@ pub(super) fn opt_item(p: &mut Parser<'_>, m: Marker, is_in_extern: bool) -> Res
     // test_err gen_fn 2021
     // gen fn gen_fn() {}
     // async gen fn async_gen_fn() {}
-    if p.at(T![gen]) && p.nth(1) == T![fn] {
+    if p.at(T![gen]) && is_fn_like(p.nth(1)) {
         p.eat(T![gen]);
         has_mods = true;
     }

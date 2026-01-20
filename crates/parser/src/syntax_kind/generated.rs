@@ -149,6 +149,9 @@ pub enum SyntaxKind {
     OR_KW,
     XOR_KW,
     NOT_KW,
+    // Alternative function keywords (synonyms for fn)
+    DEF_KW,
+    FUN_KW,
     BYTE,
     BYTE_STRING,
     CHAR,
@@ -635,6 +638,9 @@ impl SyntaxKind {
             OR_KW => "or",
             XOR_KW => "xor",
             NOT_KW => "not",
+            // Alternative function keywords (synonyms for fn)
+            DEF_KW => "def",
+            FUN_KW => "fun",
             ASYNC_KW => "async",
             AWAIT_KW => "await",
             DYN_KW => "dyn",
@@ -742,6 +748,9 @@ impl SyntaxKind {
             OR_KW => true,
             XOR_KW => true,
             NOT_KW => true,
+            // Alternative function keywords (synonyms for fn)
+            DEF_KW => true,
+            FUN_KW => true,
             _ => false,
         }
     }
@@ -837,6 +846,9 @@ impl SyntaxKind {
             OR_KW => true,
             XOR_KW => true,
             NOT_KW => true,
+            // Alternative function keywords (synonyms for fn)
+            DEF_KW => true,
+            FUN_KW => true,
             _ => false,
         }
     }
@@ -996,6 +1008,9 @@ impl SyntaxKind {
             "or" => OR_KW,
             "xor" => XOR_KW,
             "not" => NOT_KW,
+            // Alternative function keywords (synonyms for fn)
+            "def" => DEF_KW,
+            "fun" => FUN_KW,
             _ => return None,
         };
         Some(kw)
@@ -1173,6 +1188,9 @@ macro_rules ! T_ {
     [or] => { $ crate :: SyntaxKind :: OR_KW };
     [xor] => { $ crate :: SyntaxKind :: XOR_KW };
     [not] => { $ crate :: SyntaxKind :: NOT_KW };
+    // Alternative function keywords (synonyms for fn)
+    [def] => { $ crate :: SyntaxKind :: DEF_KW };
+    [fun] => { $ crate :: SyntaxKind :: FUN_KW };
     [async] => { $ crate :: SyntaxKind :: ASYNC_KW };
     [await] => { $ crate :: SyntaxKind :: AWAIT_KW };
     [dyn] => { $ crate :: SyntaxKind :: DYN_KW };

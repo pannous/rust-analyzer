@@ -152,12 +152,10 @@ impl GlobalState {
                 "Proc-macros and/or build scripts have changed and need to be rebuilt.\n\n",
             );
         }
+        // Build script failures are common (e.g., rustc bootstrap builds) and shouldn't
+        // spam the user with warnings - just log them silently
         if self.fetch_build_data_error().is_err() {
-            status.health |= lsp_ext::Health::Warning;
-            message.push_str("Failed to run build scripts of some packages.\n\n");
-            message.push_str(
-                "Please refer to the language server logs for more details on the errors.",
-            );
+            tracing::info!("Some build scripts failed to run - check logs for details");
         }
         if let Some(err) = &self.config_errors {
             status.health |= lsp_ext::Health::Warning;
