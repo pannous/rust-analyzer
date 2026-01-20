@@ -364,6 +364,14 @@ impl GlobalState {
                 let mut has_structure_changes = false;
                 let mut bytes = vec![];
                 let mut modified_rust_files = vec![];
+                // Hoist out of loop - config doesn't change between files
+                let additional_files: Vec<&str> = self
+                    .config
+                    .discover_workspace_config()
+                    .map(|cfg| {
+                        cfg.files_to_watch.iter().map(String::as_str).collect()
+                    })
+                    .unwrap_or_default();
                 for file in changed_files.into_values() {
                     let vfs_path = vfs.file_path(file.file_id);
                     if let Some(("rust-analyzer", Some("toml"))) = vfs_path.name_and_extension() {
@@ -377,14 +385,6 @@ impl GlobalState {
                         if file.is_modified() && path.extension() == Some("rs") {
                             modified_rust_files.push(file.file_id);
                         }
-
-                        let additional_files = self
-                            .config
-                            .discover_workspace_config()
-                            .map(|cfg| {
-                                cfg.files_to_watch.iter().map(String::as_str).collect::<Vec<&str>>()
-                            })
-                            .unwrap_or_default();
 
                         let path = path.to_path_buf();
                         if file.is_created_or_deleted() {
