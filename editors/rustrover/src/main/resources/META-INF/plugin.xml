@@ -32,6 +32,9 @@
             implementation="com.customra.run.RustRunConfigurationType"/>
         <runConfigurationProducer
             implementation="com.customra.run.RustRunConfigurationProducer"/>
+        <runLineMarkerContributor
+            language="Rustx"
+            implementationClass="com.customra.run.RustTestLineMarkerProvider"/>
         <lang.parserDefinition
             language="Rustx"
             implementationClass="com.customra.RustxParserDefinition"/>
