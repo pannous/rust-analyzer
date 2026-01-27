@@ -1,19 +1,13 @@
 package com.customra.run
 
-import com.intellij.execution.lineMarker.ExecutorAction
 import com.intellij.execution.lineMarker.RunLineMarkerContributor
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import com.intellij.psi.impl.source.tree.LeafPsiElement
 
 /**
- * Provides run gutter icons (green arrows) for Rust test functions and main file markers.
- * Shows icons for:
- * - Functions with #[test] attribute
- * - Functions starting with "test_"
- * - Top of file (for running the entire file)
+ * Provides run gutter icons (green arrows) for Rustx files.
+ * Shows green arrow at the start of the file to run it.
  */
 class RustTestLineMarkerProvider : RunLineMarkerContributor() {
 
@@ -22,69 +16,44 @@ class RustTestLineMarkerProvider : RunLineMarkerContributor() {
         val file = element.containingFile ?: return null
         if (!isRustxFile(file)) return null
 
-        // Check if this is the first element (for file-level run marker)
-        if (isFirstElement(element)) {
+        val text = element.text
+
+        // Show marker at the very beginning of the file (first non-whitespace element)
+        if (element.parent == file && element.prevSibling == null && text.isNotBlank()) {
             return withExecutorActions(AllIcons.RunConfigurations.TestState.Run)
         }
 
-        // Check for test functions
-        val text = element.text
-        if (element is LeafPsiElement && text == "fn") {
-            if (isTestFunction(element)) {
+        // Show marker on test attribute #[test]
+        if (text.trim() == "#[test]") {
+            return withExecutorActions(AllIcons.RunConfigurations.TestState.Run)
+        }
+
+        // Show marker on function keyword when it's a test function
+        if (text == "fn") {
+            // Check if this is inside a test function by looking ahead
+            var next = element.nextSibling
+            while (next != null && next.text.trim().isEmpty()) {
+                next = next.nextSibling
+            }
+            // If next element starts with "test_", it's a test function
+            if (next != null && next.text.startsWith("test_")) {
                 return withExecutorActions(AllIcons.RunConfigurations.TestState.Run)
+            }
+            // Check if there's a #[test] attribute before this function
+            var prev = element.prevSibling
+            while (prev != null) {
+                val prevText = prev.text.trim()
+                if (prevText == "#[test]") {
+                    return withExecutorActions(AllIcons.RunConfigurations.TestState.Run)
+                }
+                if (prevText.isNotEmpty() && !prevText.startsWith("//")) {
+                    break
+                }
+                prev = prev.prevSibling
             }
         }
 
         return null
-    }
-
-    private fun isFirstElement(element: PsiElement): Boolean {
-        val file = element.containingFile
-        var current: PsiElement? = file.firstChild
-        while (current != null) {
-            if (current == element) return true
-            if (current.text.isNotBlank() && current.text.trim().isNotEmpty()) {
-                return false
-            }
-            current = current.nextSibling
-        }
-        return false
-    }
-
-    private fun isTestFunction(fnElement: PsiElement): Boolean {
-        // Look backwards for #[test] attribute
-        var prev: PsiElement? = fnElement.prevSibling
-        var checkCount = 0
-        while (prev != null && checkCount < 10) {
-            val text = prev.text.trim()
-            if (text.contains("#[test]") || text.contains("# [test]")) {
-                return true
-            }
-            // Stop at previous function or other major construct
-            if (text.contains("fn ") && prev != fnElement) {
-                break
-            }
-            prev = prev.prevSibling
-            checkCount++
-        }
-
-        // Look forward for function name starting with "test_"
-        var next: PsiElement? = fnElement.nextSibling
-        var forwardCheckCount = 0
-        while (next != null && forwardCheckCount < 5) {
-            val text = next.text.trim()
-            if (text.matches(Regex("^test_\\w+"))) {
-                return true
-            }
-            // Stop at opening brace
-            if (text.contains("{")) {
-                break
-            }
-            next = next.nextSibling
-            forwardCheckCount++
-        }
-
-        return false
     }
 
     private fun isRustxFile(file: PsiFile): Boolean {
