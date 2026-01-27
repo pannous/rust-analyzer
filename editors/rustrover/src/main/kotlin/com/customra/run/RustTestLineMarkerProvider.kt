@@ -14,7 +14,8 @@ import com.customra.run.RustRunConfiguration
 
 /**
  * Provides run gutter icons (green arrows) for Rustx files.
- * Shows green arrow at the start of the file to run it.
+ * Shows green arrow at the start of the file to run it and on test functions to run individual tests.
+ * All markers execute immediately without showing dropdown menus.
  */
 class RustTestLineMarkerProvider : RunLineMarkerContributor() {
 
@@ -25,8 +26,8 @@ class RustTestLineMarkerProvider : RunLineMarkerContributor() {
 
         val text = element.text
 
-        // Show marker at the very beginning of the file (first element - usually shebang)
-        if (element.parent == file && element.prevSibling == null && text.isNotBlank()) {
+        // Show marker on shebang - match exactly "#!" and be a direct file child
+        if (text == "#!" && element.parent == file) {
             return Info(
                 AllIcons.RunConfigurations.TestState.Run,
                 { "Run ${file.name}" },
@@ -114,8 +115,12 @@ class RustTestLineMarkerProvider : RunLineMarkerContributor() {
                 configuration.scriptPath = virtualFile.path
                 configuration.testFilter = testName ?: ""
 
-                runManager.addConfiguration(settings)
-                runManager.selectedConfiguration = settings
+                // For whole-file runs (shebang), don't add config - just run directly to avoid duplicates
+                // For tests, add the config so it can be rerun
+                if (testName != null) {
+                    runManager.addConfiguration(settings)
+                    runManager.selectedConfiguration = settings
+                }
 
                 ExecutionUtil.runConfiguration(settings, DefaultRunExecutor.getRunExecutorInstance())
             }
