@@ -14,6 +14,7 @@ import java.io.File
 class RustRunConfigurationOptions : RunConfigurationOptions() {
     var scriptPath by string("")
     var arguments by string("")
+    var testFilter by string("")
 }
 
 class RustRunConfiguration(
@@ -29,6 +30,10 @@ class RustRunConfiguration(
     var arguments: String
         get() = options.arguments ?: ""
         set(value) { options.arguments = value }
+
+    var testFilter: String
+        get() = options.testFilter ?: ""
+        set(value) { options.testFilter = value }
 
     override fun getOptions(): RustRunConfigurationOptions {
         return super.getOptions() as RustRunConfigurationOptions
@@ -70,8 +75,9 @@ class RustRunConfiguration(
         if (testInfo != null) {
             val (cargoDir, testName) = testInfo
             val cargo = findCustomCargo()
+            val testArg = if (testFilter.isNotBlank()) " $testFilter" else ""
             val runArgs = if (arguments.isNotBlank()) " -- $arguments" else ""
-            return Pair("\"$cargo\" test --test $testName$runArgs", cargoDir)
+            return Pair("\"$cargo\" test --test $testName$testArg$runArgs", cargoDir)
         }
 
         // Regular file: compile and run with rustc
@@ -79,8 +85,9 @@ class RustRunConfiguration(
         val tempDir = File(file.parent, "tmp")
         tempDir.mkdirs()
         val outputPath = File(tempDir, file.nameWithoutExtension).absolutePath
+        val testArg = if (testFilter.isNotBlank()) " $testFilter" else ""
         val runArgs = if (arguments.isNotBlank()) " $arguments" else ""
-        return Pair("\"$rustc\" \"$scriptPath\" -o \"$outputPath\" && \"$outputPath\"$runArgs", file.parent)
+        return Pair("\"$rustc\" \"$scriptPath\" -o \"$outputPath\" --test && \"$outputPath\"$testArg$runArgs", file.parent)
     }
 
     private fun findTestContext(file: File): Pair<String, String>? {

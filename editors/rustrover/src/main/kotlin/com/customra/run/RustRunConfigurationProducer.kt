@@ -35,8 +35,90 @@ class RustRunConfigurationProducer : LazyRunConfigurationProducer<RustRunConfigu
         if (file.extension !in RUST_EXTENSIONS) return false
 
         configuration.scriptPath = file.path
-        configuration.name = "Run ${file.nameWithoutExtension}"
+
+        // Check if we're running a specific test function
+        val element = sourceElement.get()
+        val testName = extractTestName(element)
+        if (testName != null) {
+            configuration.testFilter = testName
+            configuration.name = "Run $testName"
+        } else {
+            configuration.testFilter = ""
+            configuration.name = "Run ${file.nameWithoutExtension}"
+        }
+
         return true
+    }
+
+    private fun extractTestName(element: PsiElement?): String? {
+        if (element == null) return null
+
+        val text = element.text
+
+        // If this is "fn " token, look ahead for function name
+        if (text == "fn " || text == "fn") {
+            var next = element.nextSibling
+            var functionName = ""
+            var steps = 0
+            while (next != null && steps < 5) {
+                val nextText = next.text.trim()
+                if (nextText.isEmpty()) {
+                    next = next.nextSibling
+                    steps++
+                    continue
+                }
+                if (nextText.contains("(") || nextText.contains("{")) {
+                    // Extract just the name part before (
+                    val beforeParen = nextText.substringBefore("(").substringBefore("{").trim()
+                    if (beforeParen.isNotEmpty()) {
+                        functionName += beforeParen
+                    }
+                    break
+                }
+                functionName += nextText
+                next = next.nextSibling
+                steps++
+            }
+
+            // Only return if it's a test function
+            if (functionName.startsWith("test_") || hasTestAttribute(element)) {
+                return functionName.substringBefore("(").substringBefore("{").trim()
+            }
+        }
+
+        // If this is "#[" token, look ahead for function name
+        if (text == "#[") {
+            val nextText = element.nextSibling?.text ?: ""
+            if (nextText.startsWith("test]")) {
+                // Find the fn keyword and extract name
+                var next = element.nextSibling
+                while (next != null) {
+                    if (next.text == "fn " || next.text == "fn") {
+                        return extractTestName(next)
+                    }
+                    next = next.nextSibling
+                }
+            }
+        }
+
+        return null
+    }
+
+    private fun hasTestAttribute(fnElement: PsiElement): Boolean {
+        var prev = fnElement.prevSibling
+        var steps = 0
+        while (prev != null && steps < 10) {
+            val text = prev.text.trim()
+            if (text == "#[" || text.startsWith("test]")) {
+                return true
+            }
+            if (text.startsWith("fn")) {
+                break
+            }
+            prev = prev.prevSibling
+            steps++
+        }
+        return false
     }
 
     override fun onFirstRun(configuration: ConfigurationFromContext, context: ConfigurationContext, startRunnable: Runnable) {

@@ -4,6 +4,10 @@ import com.intellij.execution.lineMarker.RunLineMarkerContributor
 import com.intellij.icons.AllIcons
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.execution.actions.ConfigurationContext
+import com.intellij.execution.actions.ConfigurationFromContext
+import com.intellij.execution.actions.RunConfigurationProducer
+import com.intellij.openapi.util.Ref
 
 /**
  * Provides run gutter icons (green arrows) for Rustx files.
@@ -18,38 +22,57 @@ class RustTestLineMarkerProvider : RunLineMarkerContributor() {
 
         val text = element.text
 
-        // Show marker at the very beginning of the file (first non-whitespace element)
+        // Show marker at the very beginning of the file (first element - usually shebang)
         if (element.parent == file && element.prevSibling == null && text.isNotBlank()) {
             return withExecutorActions(AllIcons.RunConfigurations.TestState.Run)
         }
 
-        // Show marker on test attribute #[test]
-        if (text.trim() == "#[test]") {
-            return withExecutorActions(AllIcons.RunConfigurations.TestState.Run)
-        }
-
-        // Show marker on function keyword when it's a test function
-        if (text == "fn") {
-            // Check if this is inside a test function by looking ahead
-            var next = element.nextSibling
-            while (next != null && next.text.trim().isEmpty()) {
-                next = next.nextSibling
-            }
-            // If next element starts with "test_", it's a test function
-            if (next != null && next.text.startsWith("test_")) {
+        // Show marker on test attribute: match "#[" and check next sibling for "test]"
+        if (text == "#[") {
+            val next = element.nextSibling
+            if (next != null && next.text.startsWith("test]")) {
                 return withExecutorActions(AllIcons.RunConfigurations.TestState.Run)
             }
+        }
+
+        // Show marker on function keyword "fn " when it's a test function
+        if (text == "fn " || text == "fn") {
+            // Collect the function name from next siblings
+            var next = element.nextSibling
+            var functionName = ""
+            var steps = 0
+            while (next != null && steps < 3) {
+                val nextText = next.text.trim()
+                if (nextText.isNotEmpty() && !nextText.startsWith("{")) {
+                    functionName += nextText
+                }
+                if (nextText.contains("(") || nextText.contains("{")) {
+                    break
+                }
+                next = next.nextSibling
+                steps++
+            }
+
+            // Check if function name starts with test_
+            if (functionName.startsWith("test_")) {
+                return withExecutorActions(AllIcons.RunConfigurations.TestState.Run)
+            }
+
             // Check if there's a #[test] attribute before this function
             var prev = element.prevSibling
-            while (prev != null) {
+            var checkSteps = 0
+            while (prev != null && checkSteps < 10) {
                 val prevText = prev.text.trim()
-                if (prevText == "#[test]") {
+                if (prevText == "#[" || prevText.startsWith("test]")) {
+                    // Found test attribute nearby
                     return withExecutorActions(AllIcons.RunConfigurations.TestState.Run)
                 }
-                if (prevText.isNotEmpty() && !prevText.startsWith("//")) {
+                if (prevText.startsWith("fn")) {
+                    // Hit another function, stop
                     break
                 }
                 prev = prev.prevSibling
+                checkSteps++
             }
         }
 
