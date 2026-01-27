@@ -51,7 +51,23 @@ class RustxLexer : LexerBase() {
             return
         }
 
-        // Regular content - advance to next potential comment or end of buffer
+        // Check for keywords (identifiers that match our keyword list)
+        if (isIdentifierStart(buffer[currentPos])) {
+            val wordStart = currentPos
+            while (currentPos < endOffset && isIdentifierPart(buffer[currentPos])) {
+                currentPos++
+            }
+            val word = buffer.subSequence(wordStart, currentPos).toString()
+            if (RustxKeywords.KEYWORDS.contains(word)) {
+                tokenEnd = currentPos
+                currentToken = RustxTokenTypes.KEYWORD
+                return
+            }
+            // Not a keyword, treat as regular code
+            // Continue to next token boundary
+        }
+
+        // Regular content - advance to next potential comment, keyword, or end of buffer
         while (currentPos < endOffset) {
             if (buffer[currentPos] == '\n') {
                 currentPos++
@@ -60,10 +76,21 @@ class RustxLexer : LexerBase() {
             if (isHashCommentStart(currentPos)) {
                 break
             }
+            if (isIdentifierStart(buffer[currentPos])) {
+                break
+            }
             currentPos++
         }
         tokenEnd = currentPos
         currentToken = RustxTokenTypes.CODE
+    }
+
+    private fun isIdentifierStart(c: Char): Boolean {
+        return c.isLetter() || c == '_'
+    }
+
+    private fun isIdentifierPart(c: Char): Boolean {
+        return c.isLetterOrDigit() || c == '_'
     }
 
     private fun isHashCommentStart(pos: Int): Boolean {
@@ -97,4 +124,13 @@ class RustxLexer : LexerBase() {
 object RustxTokenTypes {
     val CODE = IElementType("CODE", RustxLanguage)
     val HASH_COMMENT = IElementType("HASH_COMMENT", RustxLanguage)
+    val KEYWORD = IElementType("KEYWORD", RustxLanguage)
+}
+
+object RustxKeywords {
+    val KEYWORDS = setOf(
+        "and", "or", "not", "xor",
+        "true", "false",
+        "eq", "ne", "lt", "le", "gt", "ge"
+    )
 }

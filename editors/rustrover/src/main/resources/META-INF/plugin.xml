@@ -44,11 +44,11 @@
     </extensions>
 
     <actions>
-        <action id="customra.toggleComment"
+        <action id="CommentByLineComment"
                 class="com.customra.RustxCommentAction"
-                text="Toggle Comment"
-                description="Toggle line comment (// and # support)"
-                use-shortcut-of="CommentByLineComment"/>
+                text="Comment with Line Comment"
+                description="Comment or uncomment line (// and # support)"
+                overrides="true"/>
         <action id="customra.run"
                 class="com.customra.run.RustRunAction"
                 text="Run with Custom Rust"

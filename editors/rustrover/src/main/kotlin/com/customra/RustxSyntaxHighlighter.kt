@@ -18,7 +18,13 @@ class RustxSyntaxHighlighter : SyntaxHighlighterBase() {
             DefaultLanguageHighlighterColors.LINE_COMMENT
         )
 
+        val KEYWORD = TextAttributesKey.createTextAttributesKey(
+            "RUSTX_KEYWORD",
+            DefaultLanguageHighlighterColors.KEYWORD
+        )
+
         private val COMMENT_KEYS = arrayOf(COMMENT)
+        private val KEYWORD_KEYS = arrayOf(KEYWORD)
         private val EMPTY_KEYS = emptyArray<TextAttributesKey>()
     }
 
@@ -27,6 +33,7 @@ class RustxSyntaxHighlighter : SyntaxHighlighterBase() {
     override fun getTokenHighlights(tokenType: IElementType): Array<TextAttributesKey> {
         return when (tokenType) {
             RustxTokenTypes.HASH_COMMENT -> COMMENT_KEYS
+            RustxTokenTypes.KEYWORD -> KEYWORD_KEYS
             else -> EMPTY_KEYS
         }
     }

@@ -1,26 +1,29 @@
 package com.customra
 
-import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.codeInsight.generation.actions.CommentByLineCommentAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.util.TextRange
 
 /**
- * Custom comment toggle action that supports both // and # as comment prefixes.
- * - Commenting adds "// "
- * - Uncommenting removes "// " or "# " (only at line start or within 2 leading spaces)
+ * Overrides the built-in CommentByLineCommentAction to support both // and # prefixes
+ * for Rustx files. For other files, delegates to parent implementation.
  */
-class RustxCommentAction : AnAction() {
+class RustxCommentAction : CommentByLineCommentAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
-        val project = e.project ?: return
-        val document = editor.document
-        val file = e.getData(CommonDataKeys.PSI_FILE) ?: return
+        val editor = e.getData(CommonDataKeys.EDITOR)
+        val project = e.project
+        val file = e.getData(CommonDataKeys.PSI_FILE)
 
-        if (!isRustxFile(file.name)) return
+        // Delegate to parent for non-Rustx files
+        if (editor == null || project == null || file == null || !isRustxFile(file.name)) {
+            super.actionPerformed(e)
+            return
+        }
+
+        val document = editor.document
 
         WriteCommandAction.runWriteCommandAction(project) {
             val selectionModel = editor.selectionModel
@@ -31,9 +34,8 @@ class RustxCommentAction : AnAction() {
                 startLine = document.getLineNumber(selectionModel.selectionStart)
                 endLine = document.getLineNumber(selectionModel.selectionEnd)
             } else {
-                val line = editor.caretModel.logicalPosition.line
-                startLine = line
-                endLine = line
+                startLine = editor.caretModel.logicalPosition.line
+                endLine = startLine
             }
 
             // Check if all non-blank lines are commented
@@ -42,7 +44,7 @@ class RustxCommentAction : AnAction() {
                 text.isBlank() || isLineCommented(text)
             }
 
-            // Process lines in reverse to preserve line numbers during edits
+            // Process lines in reverse to preserve line numbers
             for (line in endLine downTo startLine) {
                 val lineText = getLineText(document, line)
                 if (lineText.isBlank()) continue
@@ -56,17 +58,12 @@ class RustxCommentAction : AnAction() {
         }
     }
 
-    override fun update(e: AnActionEvent) {
-        val file = e.getData(CommonDataKeys.PSI_FILE)
-        e.presentation.isEnabledAndVisible = file != null && isRustxFile(file.name)
-    }
-
     private fun isRustxFile(name: String): Boolean {
         val ext = name.substringAfterLast('.', "")
         return ext in setOf("rust", "rx", "roo", "🦀", "🐓", "🦘")
     }
 
-    private fun getLineText(document: Document, line: Int): String {
+    private fun getLineText(document: com.intellij.openapi.editor.Document, line: Int): String {
         val start = document.getLineStartOffset(line)
         val end = document.getLineEndOffset(line)
         return document.getText(TextRange(start, end))
@@ -75,22 +72,20 @@ class RustxCommentAction : AnAction() {
     private fun isLineCommented(lineText: String): Boolean {
         val trimmed = lineText.trimStart()
         if (trimmed.startsWith("//")) return true
-        // Check for # at start or within 2 spaces
-        val match = Regex("^\\s{0,2}#").find(lineText)
-        return match != null
+        // # comment but not #[ attribute
+        return Regex("^\\s{0,2}#(?!\\[)").find(lineText) != null
     }
 
-    private fun commentLine(document: Document, line: Int, lineText: String) {
+    private fun commentLine(document: com.intellij.openapi.editor.Document, line: Int, lineText: String) {
         val lineStart = document.getLineStartOffset(line)
         val indent = lineText.takeWhile { it == ' ' || it == '\t' }
         document.insertString(lineStart + indent.length, "// ")
     }
 
-    private fun uncommentLine(document: Document, line: Int, lineText: String) {
+    private fun uncommentLine(document: com.intellij.openapi.editor.Document, line: Int, lineText: String) {
         val lineStart = document.getLineStartOffset(line)
 
-        // Try to match and remove comment prefixes
-        // Pattern 1: "// " or "//" at any indentation level
+        // Pattern 1: "// " or "//" at any indentation
         val slashMatch = Regex("^(\\s*)// ?").find(lineText)
         if (slashMatch != null) {
             val prefixEnd = slashMatch.range.last + 1
@@ -98,13 +93,12 @@ class RustxCommentAction : AnAction() {
             return
         }
 
-        // Pattern 2: "# " or "#" only within first 2 spaces
-        val hashMatch = Regex("^(\\s{0,2})# ?").find(lineText)
+        // Pattern 2: "# " or "#" only within first 2 spaces, but not #[ attributes
+        val hashMatch = Regex("^(\\s{0,2})#(?!\\[) ?").find(lineText)
         if (hashMatch != null) {
             val indent = hashMatch.groupValues[1]
             val prefixEnd = hashMatch.range.last + 1
             document.deleteString(lineStart + indent.length, lineStart + prefixEnd)
-            return
         }
     }
 }
