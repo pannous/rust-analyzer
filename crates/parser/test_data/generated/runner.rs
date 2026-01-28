@@ -1,6 +1,10 @@
 mod ok {
     use crate::tests::*;
     #[test]
+    fn and_or_xor_operators() {
+        run_and_expect_no_errors("test_data/parser/inline/ok/and_or_xor_operators.rs");
+    }
+    #[test]
     fn anonymous_const() {
         run_and_expect_no_errors("test_data/parser/inline/ok/anonymous_const.rs");
     }
@@ -450,6 +454,10 @@ mod ok {
         run_and_expect_no_errors("test_data/parser/inline/ok/nocontentexpr_after_item.rs");
     }
     #[test]
+    fn not_prefix_operator() {
+        run_and_expect_no_errors("test_data/parser/inline/ok/not_prefix_operator.rs");
+    }
+    #[test]
     fn offset_of_parens() {
         run_and_expect_no_errors("test_data/parser/inline/ok/offset_of_parens.rs");
     }
@@ -495,6 +503,10 @@ mod ok {
     }
     #[test]
     fn postfix_range() { run_and_expect_no_errors("test_data/parser/inline/ok/postfix_range.rs"); }
+    #[test]
+    fn power_operator() {
+        run_and_expect_no_errors("test_data/parser/inline/ok/power_operator.rs");
+    }
     #[test]
     fn precise_capturing() {
         run_and_expect_no_errors("test_data/parser/inline/ok/precise_capturing.rs");

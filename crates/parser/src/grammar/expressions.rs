@@ -252,6 +252,7 @@ fn current_op(p: &Parser<'_>) -> (u8, SyntaxKind, Associativity) {
         T![-]                  => (10, T![-],   Left),
         T![as]                 => (12, T![as],  Left),
 
+        // Custom operators for Rust fork: and/or/xor as contextual keywords
         // test and_or_xor_operators
         // fn test() {
         //     let a = true and false;
@@ -259,7 +260,6 @@ fn current_op(p: &Parser<'_>) -> (u8, SyntaxKind, Associativity) {
         //     let c = 1 xor 2;
         //     let d = a and b or c;
         // }
-        // Custom operators for Rust fork: and/or/xor as contextual keywords
         SyntaxKind::IDENT if p.at_contextual_kw(T![and]) => (4, T![&&], Left),
         SyntaxKind::IDENT if p.at_contextual_kw(T![or])  => (3, T![||], Left),
         SyntaxKind::IDENT if p.at_contextual_kw(T![xor]) => (7, T![^],  Left),
@@ -403,15 +403,15 @@ fn lhs(p: &mut Parser<'_>, r: Restrictions) -> Option<(CompletedMarker, BlockLik
             p.bump_any();
             PREFIX_EXPR
         }
+        // Custom operator: 'not' as prefix (alias for !)
+        // Be conservative: only treat as operator when clearly followed by an operand.
+        // Exclude '{' and '[' since they often appear as continuations (match x {, etc.)
         // test not_prefix_operator
         // fn foo() {
         //     let a = not true;
         //     let b = not not false;
         //     let c = not a and b;
         // }
-        // Custom operator: 'not' as prefix (alias for !)
-        // Be conservative: only treat as operator when clearly followed by an operand.
-        // Exclude '{' and '[' since they often appear as continuations (match x {, etc.)
         SyntaxKind::IDENT if p.at_contextual_kw(T![not]) => {
             let next = p.nth(1);
             // Only treat as prefix operator if followed by clear unary operand starters
