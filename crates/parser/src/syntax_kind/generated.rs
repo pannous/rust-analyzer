@@ -55,7 +55,7 @@ pub enum SyntaxKind {
     CARETEQ,
     SLASHEQ,
     STAREQ,
-    STAR2,  // ** power operator
+    STAR2,
     PERCENTEQ,
     AMP2,
     PIPE2,
@@ -65,6 +65,7 @@ pub enum SyntaxKind {
     SHREQ,
     SELF_TYPE_KW,
     ABSTRACT_KW,
+    AND_KW,
     AS_KW,
     BECOME_KW,
     BOX_KW,
@@ -72,6 +73,7 @@ pub enum SyntaxKind {
     CONST_KW,
     CONTINUE_KW,
     CRATE_KW,
+    DEF_KW,
     DO_KW,
     ELSE_KW,
     ENUM_KW,
@@ -80,9 +82,12 @@ pub enum SyntaxKind {
     FINAL_KW,
     FN_KW,
     FOR_KW,
+    FUN_KW,
     IF_KW,
     IMPL_KW,
+    IMPORT_KW,
     IN_KW,
+    INCLUDE_KW,
     LET_KW,
     LOOP_KW,
     MACRO_KW,
@@ -90,6 +95,8 @@ pub enum SyntaxKind {
     MOD_KW,
     MOVE_KW,
     MUT_KW,
+    NOT_KW,
+    OR_KW,
     OVERRIDE_KW,
     PRIV_KW,
     PUB_KW,
@@ -109,6 +116,7 @@ pub enum SyntaxKind {
     VIRTUAL_KW,
     WHERE_KW,
     WHILE_KW,
+    XOR_KW,
     YIELD_KW,
     ASM_KW,
     ASYNC_KW,
@@ -144,14 +152,6 @@ pub enum SyntaxKind {
     TRY_KW,
     UNION_KW,
     YEET_KW,
-    // Custom operators for Rust fork
-    AND_KW,
-    OR_KW,
-    XOR_KW,
-    NOT_KW,
-    // Alternative function keywords (synonyms for fn)
-    DEF_KW,
-    FUN_KW,
     BYTE,
     BYTE_STRING,
     CHAR,
@@ -221,6 +221,8 @@ pub enum SyntaxKind {
     IF_EXPR,
     IMPL,
     IMPL_TRAIT_TYPE,
+    IMPORT,
+    INCLUDE,
     INDEX_EXPR,
     INFER_TYPE,
     ITEM_LIST,
@@ -394,6 +396,8 @@ impl SyntaxKind {
             | IF_EXPR
             | IMPL
             | IMPL_TRAIT_TYPE
+            | IMPORT
+            | INCLUDE
             | INDEX_EXPR
             | INFER_TYPE
             | ITEM_LIST
@@ -558,6 +562,7 @@ impl SyntaxKind {
             SHREQ => ">>=",
             SELF_TYPE_KW => "Self",
             ABSTRACT_KW => "abstract",
+            AND_KW => "and",
             AS_KW => "as",
             BECOME_KW => "become",
             BOX_KW => "box",
@@ -565,6 +570,7 @@ impl SyntaxKind {
             CONST_KW => "const",
             CONTINUE_KW => "continue",
             CRATE_KW => "crate",
+            DEF_KW => "def",
             DO_KW => "do",
             ELSE_KW => "else",
             ENUM_KW => "enum",
@@ -573,9 +579,12 @@ impl SyntaxKind {
             FINAL_KW => "final",
             FN_KW => "fn",
             FOR_KW => "for",
+            FUN_KW => "fun",
             IF_KW => "if",
             IMPL_KW => "impl",
+            IMPORT_KW => "import",
             IN_KW => "in",
+            INCLUDE_KW => "include",
             LET_KW => "let",
             LOOP_KW => "loop",
             MACRO_KW => "macro",
@@ -583,6 +592,8 @@ impl SyntaxKind {
             MOD_KW => "mod",
             MOVE_KW => "move",
             MUT_KW => "mut",
+            NOT_KW => "not",
+            OR_KW => "or",
             OVERRIDE_KW => "override",
             PRIV_KW => "priv",
             PUB_KW => "pub",
@@ -602,6 +613,7 @@ impl SyntaxKind {
             VIRTUAL_KW => "virtual",
             WHERE_KW => "where",
             WHILE_KW => "while",
+            XOR_KW => "xor",
             YIELD_KW => "yield",
             ASM_KW => "asm",
             ATT_SYNTAX_KW => "att_syntax",
@@ -633,14 +645,6 @@ impl SyntaxKind {
             SYM_KW => "sym",
             UNION_KW => "union",
             YEET_KW => "yeet",
-            // Custom operators for Rust fork
-            AND_KW => "and",
-            OR_KW => "or",
-            XOR_KW => "xor",
-            NOT_KW => "not",
-            // Alternative function keywords (synonyms for fn)
-            DEF_KW => "def",
-            FUN_KW => "fun",
             ASYNC_KW => "async",
             AWAIT_KW => "await",
             DYN_KW => "dyn",
@@ -655,6 +659,7 @@ impl SyntaxKind {
             self,
             SELF_TYPE_KW
                 | ABSTRACT_KW
+                | AND_KW
                 | AS_KW
                 | BECOME_KW
                 | BOX_KW
@@ -662,6 +667,7 @@ impl SyntaxKind {
                 | CONST_KW
                 | CONTINUE_KW
                 | CRATE_KW
+                | DEF_KW
                 | DO_KW
                 | ELSE_KW
                 | ENUM_KW
@@ -670,9 +676,12 @@ impl SyntaxKind {
                 | FINAL_KW
                 | FN_KW
                 | FOR_KW
+                | FUN_KW
                 | IF_KW
                 | IMPL_KW
+                | IMPORT_KW
                 | IN_KW
+                | INCLUDE_KW
                 | LET_KW
                 | LOOP_KW
                 | MACRO_KW
@@ -680,6 +689,8 @@ impl SyntaxKind {
                 | MOD_KW
                 | MOVE_KW
                 | MUT_KW
+                | NOT_KW
+                | OR_KW
                 | OVERRIDE_KW
                 | PRIV_KW
                 | PUB_KW
@@ -699,6 +710,7 @@ impl SyntaxKind {
                 | VIRTUAL_KW
                 | WHERE_KW
                 | WHILE_KW
+                | XOR_KW
                 | YIELD_KW
         ) || match self {
             ASYNC_KW if Edition::Edition2018 <= edition => true,
@@ -743,14 +755,6 @@ impl SyntaxKind {
             SYM_KW => true,
             UNION_KW => true,
             YEET_KW => true,
-            // Custom operators for Rust fork
-            AND_KW => true,
-            OR_KW => true,
-            XOR_KW => true,
-            NOT_KW => true,
-            // Alternative function keywords (synonyms for fn)
-            DEF_KW => true,
-            FUN_KW => true,
             _ => false,
         }
     }
@@ -760,6 +764,7 @@ impl SyntaxKind {
             self,
             SELF_TYPE_KW
                 | ABSTRACT_KW
+                | AND_KW
                 | AS_KW
                 | BECOME_KW
                 | BOX_KW
@@ -767,6 +772,7 @@ impl SyntaxKind {
                 | CONST_KW
                 | CONTINUE_KW
                 | CRATE_KW
+                | DEF_KW
                 | DO_KW
                 | ELSE_KW
                 | ENUM_KW
@@ -775,9 +781,12 @@ impl SyntaxKind {
                 | FINAL_KW
                 | FN_KW
                 | FOR_KW
+                | FUN_KW
                 | IF_KW
                 | IMPL_KW
+                | IMPORT_KW
                 | IN_KW
+                | INCLUDE_KW
                 | LET_KW
                 | LOOP_KW
                 | MACRO_KW
@@ -785,6 +794,8 @@ impl SyntaxKind {
                 | MOD_KW
                 | MOVE_KW
                 | MUT_KW
+                | NOT_KW
+                | OR_KW
                 | OVERRIDE_KW
                 | PRIV_KW
                 | PUB_KW
@@ -804,6 +815,7 @@ impl SyntaxKind {
                 | VIRTUAL_KW
                 | WHERE_KW
                 | WHILE_KW
+                | XOR_KW
                 | YIELD_KW
         ) || match self {
             ASYNC_KW if Edition::Edition2018 <= edition => true,
@@ -841,14 +853,6 @@ impl SyntaxKind {
             SYM_KW => true,
             UNION_KW => true,
             YEET_KW => true,
-            // Custom operators for Rust fork
-            AND_KW => true,
-            OR_KW => true,
-            XOR_KW => true,
-            NOT_KW => true,
-            // Alternative function keywords (synonyms for fn)
-            DEF_KW => true,
-            FUN_KW => true,
             _ => false,
         }
     }
@@ -917,6 +921,7 @@ impl SyntaxKind {
         let kw = match ident {
             "Self" => SELF_TYPE_KW,
             "abstract" => ABSTRACT_KW,
+            "and" => AND_KW,
             "as" => AS_KW,
             "become" => BECOME_KW,
             "box" => BOX_KW,
@@ -924,6 +929,7 @@ impl SyntaxKind {
             "const" => CONST_KW,
             "continue" => CONTINUE_KW,
             "crate" => CRATE_KW,
+            "def" => DEF_KW,
             "do" => DO_KW,
             "else" => ELSE_KW,
             "enum" => ENUM_KW,
@@ -932,9 +938,12 @@ impl SyntaxKind {
             "final" => FINAL_KW,
             "fn" => FN_KW,
             "for" => FOR_KW,
+            "fun" => FUN_KW,
             "if" => IF_KW,
             "impl" => IMPL_KW,
+            "import" => IMPORT_KW,
             "in" => IN_KW,
+            "include" => INCLUDE_KW,
             "let" => LET_KW,
             "loop" => LOOP_KW,
             "macro" => MACRO_KW,
@@ -942,6 +951,8 @@ impl SyntaxKind {
             "mod" => MOD_KW,
             "move" => MOVE_KW,
             "mut" => MUT_KW,
+            "not" => NOT_KW,
+            "or" => OR_KW,
             "override" => OVERRIDE_KW,
             "priv" => PRIV_KW,
             "pub" => PUB_KW,
@@ -961,6 +972,7 @@ impl SyntaxKind {
             "virtual" => VIRTUAL_KW,
             "where" => WHERE_KW,
             "while" => WHILE_KW,
+            "xor" => XOR_KW,
             "yield" => YIELD_KW,
             "async" if Edition::Edition2018 <= edition => ASYNC_KW,
             "await" if Edition::Edition2018 <= edition => AWAIT_KW,
@@ -1003,14 +1015,6 @@ impl SyntaxKind {
             "sym" => SYM_KW,
             "union" => UNION_KW,
             "yeet" => YEET_KW,
-            // Custom operators for Rust fork
-            "and" => AND_KW,
-            "or" => OR_KW,
-            "xor" => XOR_KW,
-            "not" => NOT_KW,
-            // Alternative function keywords (synonyms for fn)
-            "def" => DEF_KW,
-            "fun" => FUN_KW,
             _ => return None,
         };
         Some(kw)
@@ -1108,6 +1112,7 @@ macro_rules ! T_ {
     [>>=] => { $ crate :: SyntaxKind :: SHREQ };
     [Self] => { $ crate :: SyntaxKind :: SELF_TYPE_KW };
     [abstract] => { $ crate :: SyntaxKind :: ABSTRACT_KW };
+    [and] => { $ crate :: SyntaxKind :: AND_KW };
     [as] => { $ crate :: SyntaxKind :: AS_KW };
     [become] => { $ crate :: SyntaxKind :: BECOME_KW };
     [box] => { $ crate :: SyntaxKind :: BOX_KW };
@@ -1115,6 +1120,7 @@ macro_rules ! T_ {
     [const] => { $ crate :: SyntaxKind :: CONST_KW };
     [continue] => { $ crate :: SyntaxKind :: CONTINUE_KW };
     [crate] => { $ crate :: SyntaxKind :: CRATE_KW };
+    [def] => { $ crate :: SyntaxKind :: DEF_KW };
     [do] => { $ crate :: SyntaxKind :: DO_KW };
     [else] => { $ crate :: SyntaxKind :: ELSE_KW };
     [enum] => { $ crate :: SyntaxKind :: ENUM_KW };
@@ -1123,9 +1129,12 @@ macro_rules ! T_ {
     [final] => { $ crate :: SyntaxKind :: FINAL_KW };
     [fn] => { $ crate :: SyntaxKind :: FN_KW };
     [for] => { $ crate :: SyntaxKind :: FOR_KW };
+    [fun] => { $ crate :: SyntaxKind :: FUN_KW };
     [if] => { $ crate :: SyntaxKind :: IF_KW };
     [impl] => { $ crate :: SyntaxKind :: IMPL_KW };
+    [import] => { $ crate :: SyntaxKind :: IMPORT_KW };
     [in] => { $ crate :: SyntaxKind :: IN_KW };
+    [include] => { $ crate :: SyntaxKind :: INCLUDE_KW };
     [let] => { $ crate :: SyntaxKind :: LET_KW };
     [loop] => { $ crate :: SyntaxKind :: LOOP_KW };
     [macro] => { $ crate :: SyntaxKind :: MACRO_KW };
@@ -1133,6 +1142,8 @@ macro_rules ! T_ {
     [mod] => { $ crate :: SyntaxKind :: MOD_KW };
     [move] => { $ crate :: SyntaxKind :: MOVE_KW };
     [mut] => { $ crate :: SyntaxKind :: MUT_KW };
+    [not] => { $ crate :: SyntaxKind :: NOT_KW };
+    [or] => { $ crate :: SyntaxKind :: OR_KW };
     [override] => { $ crate :: SyntaxKind :: OVERRIDE_KW };
     [priv] => { $ crate :: SyntaxKind :: PRIV_KW };
     [pub] => { $ crate :: SyntaxKind :: PUB_KW };
@@ -1152,6 +1163,7 @@ macro_rules ! T_ {
     [virtual] => { $ crate :: SyntaxKind :: VIRTUAL_KW };
     [where] => { $ crate :: SyntaxKind :: WHERE_KW };
     [while] => { $ crate :: SyntaxKind :: WHILE_KW };
+    [xor] => { $ crate :: SyntaxKind :: XOR_KW };
     [yield] => { $ crate :: SyntaxKind :: YIELD_KW };
     [asm] => { $ crate :: SyntaxKind :: ASM_KW };
     [att_syntax] => { $ crate :: SyntaxKind :: ATT_SYNTAX_KW };
@@ -1183,14 +1195,6 @@ macro_rules ! T_ {
     [sym] => { $ crate :: SyntaxKind :: SYM_KW };
     [union] => { $ crate :: SyntaxKind :: UNION_KW };
     [yeet] => { $ crate :: SyntaxKind :: YEET_KW };
-    // Custom operators for Rust fork
-    [and] => { $ crate :: SyntaxKind :: AND_KW };
-    [or] => { $ crate :: SyntaxKind :: OR_KW };
-    [xor] => { $ crate :: SyntaxKind :: XOR_KW };
-    [not] => { $ crate :: SyntaxKind :: NOT_KW };
-    // Alternative function keywords (synonyms for fn)
-    [def] => { $ crate :: SyntaxKind :: DEF_KW };
-    [fun] => { $ crate :: SyntaxKind :: FUN_KW };
     [async] => { $ crate :: SyntaxKind :: ASYNC_KW };
     [await] => { $ crate :: SyntaxKind :: AWAIT_KW };
     [dyn] => { $ crate :: SyntaxKind :: DYN_KW };

@@ -755,6 +755,32 @@ impl ImplTraitType {
     #[inline]
     pub fn impl_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![impl]) }
 }
+pub struct Import {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ast::HasAttrs for Import {}
+impl ast::HasVisibility for Import {}
+impl Import {
+    #[inline]
+    pub fn use_tree(&self) -> Option<UseTree> { support::child(&self.syntax) }
+    #[inline]
+    pub fn semicolon_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![;]) }
+    #[inline]
+    pub fn import_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![import]) }
+}
+pub struct Include {
+    pub(crate) syntax: SyntaxNode,
+}
+impl ast::HasAttrs for Include {}
+impl ast::HasVisibility for Include {}
+impl Include {
+    #[inline]
+    pub fn use_tree(&self) -> Option<UseTree> { support::child(&self.syntax) }
+    #[inline]
+    pub fn semicolon_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![;]) }
+    #[inline]
+    pub fn include_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![include]) }
+}
 pub struct IndexExpr {
     pub(crate) syntax: SyntaxNode,
 }
@@ -2092,6 +2118,8 @@ pub enum Item {
     ExternCrate(ExternCrate),
     Fn(Fn),
     Impl(Impl),
+    Import(Import),
+    Include(Include),
     MacroCall(MacroCall),
     MacroDef(MacroDef),
     MacroRules(MacroRules),
@@ -3982,6 +4010,70 @@ impl Clone for ImplTraitType {
 impl fmt::Debug for ImplTraitType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ImplTraitType").field("syntax", &self.syntax).finish()
+    }
+}
+impl AstNode for Import {
+    #[inline]
+    fn kind() -> SyntaxKind
+    where
+        Self: Sized,
+    {
+        IMPORT
+    }
+    #[inline]
+    fn can_cast(kind: SyntaxKind) -> bool { kind == IMPORT }
+    #[inline]
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) { Some(Self { syntax }) } else { None }
+    }
+    #[inline]
+    fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl hash::Hash for Import {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) { self.syntax.hash(state); }
+}
+impl Eq for Import {}
+impl PartialEq for Import {
+    fn eq(&self, other: &Self) -> bool { self.syntax == other.syntax }
+}
+impl Clone for Import {
+    fn clone(&self) -> Self { Self { syntax: self.syntax.clone() } }
+}
+impl fmt::Debug for Import {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Import").field("syntax", &self.syntax).finish()
+    }
+}
+impl AstNode for Include {
+    #[inline]
+    fn kind() -> SyntaxKind
+    where
+        Self: Sized,
+    {
+        INCLUDE
+    }
+    #[inline]
+    fn can_cast(kind: SyntaxKind) -> bool { kind == INCLUDE }
+    #[inline]
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        if Self::can_cast(syntax.kind()) { Some(Self { syntax }) } else { None }
+    }
+    #[inline]
+    fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl hash::Hash for Include {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) { self.syntax.hash(state); }
+}
+impl Eq for Include {}
+impl PartialEq for Include {
+    fn eq(&self, other: &Self) -> bool { self.syntax == other.syntax }
+}
+impl Clone for Include {
+    fn clone(&self) -> Self { Self { syntax: self.syntax.clone() } }
+}
+impl fmt::Debug for Include {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Include").field("syntax", &self.syntax).finish()
     }
 }
 impl AstNode for IndexExpr {
@@ -7814,6 +7906,14 @@ impl From<Impl> for Item {
     #[inline]
     fn from(node: Impl) -> Item { Item::Impl(node) }
 }
+impl From<Import> for Item {
+    #[inline]
+    fn from(node: Import) -> Item { Item::Import(node) }
+}
+impl From<Include> for Item {
+    #[inline]
+    fn from(node: Include) -> Item { Item::Include(node) }
+}
 impl From<MacroCall> for Item {
     #[inline]
     fn from(node: MacroCall) -> Item { Item::MacroCall(node) }
@@ -7866,6 +7966,8 @@ impl AstNode for Item {
                 | EXTERN_CRATE
                 | FN
                 | IMPL
+                | IMPORT
+                | INCLUDE
                 | MACRO_CALL
                 | MACRO_DEF
                 | MACRO_RULES
@@ -7888,6 +7990,8 @@ impl AstNode for Item {
             EXTERN_CRATE => Item::ExternCrate(ExternCrate { syntax }),
             FN => Item::Fn(Fn { syntax }),
             IMPL => Item::Impl(Impl { syntax }),
+            IMPORT => Item::Import(Import { syntax }),
+            INCLUDE => Item::Include(Include { syntax }),
             MACRO_CALL => Item::MacroCall(MacroCall { syntax }),
             MACRO_DEF => Item::MacroDef(MacroDef { syntax }),
             MACRO_RULES => Item::MacroRules(MacroRules { syntax }),
@@ -7912,6 +8016,8 @@ impl AstNode for Item {
             Item::ExternCrate(it) => &it.syntax,
             Item::Fn(it) => &it.syntax,
             Item::Impl(it) => &it.syntax,
+            Item::Import(it) => &it.syntax,
+            Item::Include(it) => &it.syntax,
             Item::MacroCall(it) => &it.syntax,
             Item::MacroDef(it) => &it.syntax,
             Item::MacroRules(it) => &it.syntax,
@@ -8314,6 +8420,8 @@ impl AstNode for AnyHasAttrs {
                 | IDENT_PAT
                 | IF_EXPR
                 | IMPL
+                | IMPORT
+                | INCLUDE
                 | INDEX_EXPR
                 | ITEM_LIST
                 | LET_EXPR
@@ -8483,6 +8591,14 @@ impl From<IfExpr> for AnyHasAttrs {
 impl From<Impl> for AnyHasAttrs {
     #[inline]
     fn from(node: Impl) -> AnyHasAttrs { AnyHasAttrs { syntax: node.syntax } }
+}
+impl From<Import> for AnyHasAttrs {
+    #[inline]
+    fn from(node: Import) -> AnyHasAttrs { AnyHasAttrs { syntax: node.syntax } }
+}
+impl From<Include> for AnyHasAttrs {
+    #[inline]
+    fn from(node: Include) -> AnyHasAttrs { AnyHasAttrs { syntax: node.syntax } }
 }
 impl From<IndexExpr> for AnyHasAttrs {
     #[inline]
@@ -9165,6 +9281,8 @@ impl AstNode for AnyHasVisibility {
                 | EXTERN_CRATE
                 | FN
                 | IMPL
+                | IMPORT
+                | INCLUDE
                 | MACRO_DEF
                 | MACRO_RULES
                 | MODULE
@@ -9220,6 +9338,14 @@ impl From<Fn> for AnyHasVisibility {
 impl From<Impl> for AnyHasVisibility {
     #[inline]
     fn from(node: Impl) -> AnyHasVisibility { AnyHasVisibility { syntax: node.syntax } }
+}
+impl From<Import> for AnyHasVisibility {
+    #[inline]
+    fn from(node: Import) -> AnyHasVisibility { AnyHasVisibility { syntax: node.syntax } }
+}
+impl From<Include> for AnyHasVisibility {
+    #[inline]
+    fn from(node: Include) -> AnyHasVisibility { AnyHasVisibility { syntax: node.syntax } }
 }
 impl From<MacroDef> for AnyHasVisibility {
     #[inline]
@@ -9610,6 +9736,16 @@ impl std::fmt::Display for Impl {
     }
 }
 impl std::fmt::Display for ImplTraitType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for Import {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Display::fmt(self.syntax(), f)
+    }
+}
+impl std::fmt::Display for Include {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(self.syntax(), f)
     }

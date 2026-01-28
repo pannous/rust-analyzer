@@ -92,6 +92,7 @@ const PUNCT: &[(&str, &str)] = &[
     ("^=", "CARETEQ"),
     ("/=", "SLASHEQ"),
     ("*=", "STAREQ"),
+    ("**", "STAR2"),  // ** power operator for custom Rust fork
     ("%=", "PERCENTEQ"),
     ("&&", "AMP2"),
     ("||", "PIPE2"),
@@ -108,6 +109,10 @@ const EOF: &str = "EOF";
 const RESERVED: &[&str] = &[
     "abstract", "become", "box", "do", "final", "macro", "override", "priv", "typeof", "unsized",
     "virtual", "yield",
+    // Custom operators and keywords for Rust fork
+    "and", "or", "xor", "not",
+    // Alternative function keywords (synonyms for fn)
+    "def", "fun",
 ];
 // keywords that are keywords only in specific parse contexts
 #[doc(alias = "WEAK_KEYWORDS")]

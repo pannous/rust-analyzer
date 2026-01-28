@@ -157,6 +157,8 @@ Item =
 | TypeAlias
 | Union
 | Use
+| Include
+| Import
 | AsmExpr
 
 MacroRules =
@@ -194,6 +196,14 @@ UseTree =
 
 UseTreeList =
   '{' (UseTree (',' UseTree)* ','?)? '}'
+
+Include =
+  Attr* Visibility?
+  'include' UseTree ';'
+
+Import =
+  Attr* Visibility?
+  'import' UseTree ';'
 
 Fn =
  Attr* Visibility?
@@ -484,7 +494,7 @@ BinExpr =
   op:(
     '||' | '&&'
   | '==' | '!=' | '<=' | '>=' | '<' | '>'
-  | '+' | '*' | '-' | '/' | '%' | '<<' | '>>' | '^' | '|' | '&'
+  | '+' | '*' | '**' | '-' | '/' | '%' | '<<' | '>>' | '^' | '|' | '&'
   | '=' | '+=' | '/=' | '*=' | '%=' | '>>=' | '<<=' | '-=' | '|=' | '&=' | '^='
   )
   rhs:Expr
