@@ -131,6 +131,8 @@ object RustxKeywords {
     val KEYWORDS = setOf(
         "and", "or", "not", "xor",
         "true", "false",
-        "eq", "ne", "lt", "le", "gt", "ge"
+        "eq", "ne", "lt", "le", "gt", "ge",
+        "include", "import",
+        "def", "fun"
     )
 }
