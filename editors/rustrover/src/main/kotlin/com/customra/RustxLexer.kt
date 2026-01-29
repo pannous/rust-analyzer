@@ -130,9 +130,9 @@ object RustxTokenTypes {
 object RustxKeywords {
     val KEYWORDS = setOf(
         "and", "or", "not", "xor",
-        "true", "false",
+        "true", "false","yes","no","empty",
         "eq", "ne", "lt", "le", "gt", "ge",
-        "include", "import",
-        "def", "fun"
+        "include","require", "import", "None","nil","null","ø",
+        "def","define", "fun", "function"
     )
 }
