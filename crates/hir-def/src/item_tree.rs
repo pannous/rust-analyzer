@@ -323,9 +323,9 @@ enum BigModItem {
 
 // `ModItem` is stored a bunch in `ItemTree`'s so we pay the max for each item. It should stay as
 // small as possible which is why we split them in two, most common ones are 3 usize but some rarer
-// ones are 5.
+// ones are 6.
 #[cfg(target_pointer_width = "64")]
-const _: [(); std::mem::size_of::<BigModItem>()] = [(); std::mem::size_of::<[usize; 5]>()];
+const _: [(); std::mem::size_of::<BigModItem>()] = [(); std::mem::size_of::<[usize; 6]>()];
 #[cfg(target_pointer_width = "64")]
 const _: [(); std::mem::size_of::<SmallModItem>()] = [(); std::mem::size_of::<[usize; 3]>()];
 

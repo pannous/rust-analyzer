@@ -45,6 +45,27 @@ pub fn use_tree_to_ast(
     use_tree_source_map(db, use_ast_id)[index].clone()
 }
 
+/// Maps a `UseTree` contained in a use/include/import item back to its AST node.
+pub fn use_tree_to_ast_from_item(
+    db: &dyn DefDatabase,
+    item_ast_id: AstId<ast::Item>,
+    index: Idx<ast::UseTree>,
+) -> ast::UseTree {
+    let ast = item_ast_id.to_node(db);
+    let ast_use_tree = match ast {
+        ast::Item::Use(use_item) => use_item.use_tree().expect("missing `use_tree`"),
+        ast::Item::Include(include_item) => include_item.use_tree().expect("missing `use_tree`"),
+        ast::Item::Import(import_item) => import_item.use_tree().expect("missing `use_tree`"),
+        _ => panic!("expected use/include/import item"),
+    };
+    let mut span_map = None;
+    let (_, source_map) = crate::item_tree::lower_use_tree(db, ast_use_tree, &mut |range| {
+        span_map.get_or_insert_with(|| db.span_map(item_ast_id.file_id)).span_for_range(range).ctx
+    })
+    .expect("failed to lower use tree");
+    source_map[index].clone()
+}
+
 /// Maps a `UseTree` contained in this import back to its AST node.
 fn use_tree_source_map(db: &dyn DefDatabase, use_ast_id: AstId<ast::Use>) -> Arena<ast::UseTree> {
     // Re-lower the AST item and get the source map.
@@ -67,6 +88,56 @@ impl HasChildSource<la_arena::Idx<ast::UseTree>> for UseId {
     ) -> InFile<ArenaMap<la_arena::Idx<ast::UseTree>, Self::Value>> {
         let loc = self.lookup(db);
         InFile::new(loc.id.file_id, use_tree_source_map(db, loc.id).into_iter().collect())
+    }
+}
+
+impl HasChildSource<la_arena::Idx<ast::UseTree>> for crate::IncludeId {
+    type Value = ast::UseTree;
+    fn child_source(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> InFile<ArenaMap<la_arena::Idx<ast::UseTree>, Self::Value>> {
+        let loc = self.lookup(db);
+        let ast = loc.id.to_node(db);
+        let ast_use_tree = ast.use_tree().expect("missing `use_tree`");
+        let mut span_map = None;
+        let (_, source_map) = crate::item_tree::lower_use_tree(db, ast_use_tree, &mut |range| {
+            span_map.get_or_insert_with(|| db.span_map(loc.id.file_id)).span_for_range(range).ctx
+        })
+        .expect("failed to lower use tree");
+        InFile::new(loc.id.file_id, source_map.into_iter().collect())
+    }
+}
+
+impl HasChildSource<la_arena::Idx<ast::UseTree>> for crate::ImportItemId {
+    type Value = ast::UseTree;
+    fn child_source(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> InFile<ArenaMap<la_arena::Idx<ast::UseTree>, Self::Value>> {
+        let loc = self.lookup(db);
+        let ast = loc.id.to_node(db);
+        let ast_use_tree = ast.use_tree().expect("missing `use_tree`");
+        let mut span_map = None;
+        let (_, source_map) = crate::item_tree::lower_use_tree(db, ast_use_tree, &mut |range| {
+            span_map.get_or_insert_with(|| db.span_map(loc.id.file_id)).span_for_range(range).ctx
+        })
+        .expect("failed to lower use tree");
+        InFile::new(loc.id.file_id, source_map.into_iter().collect())
+    }
+}
+
+impl HasChildSource<la_arena::Idx<ast::UseTree>> for crate::item_scope::UseOrImportId {
+    type Value = ast::UseTree;
+    fn child_source(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> InFile<ArenaMap<la_arena::Idx<ast::UseTree>, Self::Value>> {
+        match self {
+            crate::item_scope::UseOrImportId::Use(id) => id.child_source(db),
+            crate::item_scope::UseOrImportId::Include(id) => id.child_source(db),
+            crate::item_scope::UseOrImportId::Import(id) => id.child_source(db),
+        }
     }
 }
 

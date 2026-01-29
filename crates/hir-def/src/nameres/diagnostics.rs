@@ -13,7 +13,7 @@ use crate::{AstId, nameres::ModuleId};
 pub enum DefDiagnosticKind {
     UnresolvedModule { ast: AstId<ast::Module>, candidates: Box<[String]> },
     UnresolvedExternCrate { ast: AstId<ast::ExternCrate> },
-    UnresolvedImport { id: AstId<ast::Use>, index: Idx<ast::UseTree> },
+    UnresolvedImport { id: AstId<ast::Item>, index: Idx<ast::UseTree> },
     UnconfiguredCode { ast_id: ErasedAstId, cfg: CfgExpr, opts: CfgOptions },
     UnresolvedMacroCall { ast: MacroCallKind, path: ModPath },
     UnimplementedBuiltinMacro { ast: AstId<ast::Macro> },
@@ -71,7 +71,7 @@ impl DefDiagnostic {
 
     pub(super) fn unresolved_import(
         container: ModuleId,
-        id: AstId<ast::Use>,
+        id: AstId<ast::Item>,
         index: Idx<ast::UseTree>,
     ) -> Self {
         Self { in_module: container, kind: DefDiagnosticKind::UnresolvedImport { id, index } }

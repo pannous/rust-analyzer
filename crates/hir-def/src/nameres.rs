@@ -77,7 +77,7 @@ use tt::TextRange;
 
 use crate::{
     AstId, BlockId, BlockLoc, BuiltinDeriveImplId, ExternCrateId, FunctionId, FxIndexMap, Lookup,
-    MacroCallStyles, MacroExpander, MacroId, ModuleId, ModuleIdLt, ProcMacroId, UseId,
+    MacroCallStyles, MacroExpander, MacroId, ModuleId, ModuleIdLt, ProcMacroId,
     db::DefDatabase,
     item_scope::{BuiltinShadowMode, ItemScope},
     item_tree::TreeId,
@@ -184,7 +184,7 @@ pub struct DefMap {
     /// The prelude is empty for non-block DefMaps (unless `#[prelude_import]` was used,
     /// but that attribute is nightly and when used in a block, it affects resolution globally
     /// so we aren't handling this correctly anyways).
-    prelude: Option<(ModuleId, Option<UseId>)>,
+    prelude: Option<(ModuleId, Option<crate::item_scope::UseOrImportId>)>,
     /// `macro_use` prelude that contains macros from `#[macro_use]`'d external crates. Note that
     /// this contains all kinds of macro, not just `macro_rules!` macro.
     /// ExternCrateId being None implies it being imported from the general prelude import.
@@ -646,7 +646,7 @@ impl DefMap {
         self.block.map(|block| block.block)
     }
 
-    pub(crate) fn prelude(&self) -> Option<(ModuleId, Option<UseId>)> {
+    pub(crate) fn prelude(&self) -> Option<(ModuleId, Option<crate::item_scope::UseOrImportId>)> {
         self.prelude
     }
 

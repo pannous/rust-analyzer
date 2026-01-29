@@ -38,6 +38,12 @@ pub trait InternDatabase: RootQueryDb {
     fn intern_use(&self, loc: UseLoc) -> UseId;
 
     #[salsa::interned]
+    fn intern_include_item(&self, loc: crate::IncludeLoc) -> crate::IncludeId;
+
+    #[salsa::interned]
+    fn intern_import_item(&self, loc: crate::ImportItemLoc) -> crate::ImportItemId;
+
+    #[salsa::interned]
     fn intern_extern_crate(&self, loc: ExternCrateLoc) -> ExternCrateId;
 
     #[salsa::interned]

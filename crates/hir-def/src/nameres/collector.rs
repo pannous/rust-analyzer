@@ -30,12 +30,12 @@ use triomphe::Arc;
 use crate::{
     AdtId, AssocItemId, AstId, AstIdWithPath, BuiltinDeriveImplId, BuiltinDeriveImplLoc, ConstLoc,
     EnumLoc, ExternBlockLoc, ExternCrateId, ExternCrateLoc, FunctionId, FunctionLoc, FxIndexMap,
-    ImplLoc, ImportItemId, ImportItemLoc, IncludeId, IncludeLoc, Intern, ItemContainerId, Lookup, Macro2Id,
+    ImplLoc, ImportItemId, ImportItemLoc, IncludeId, IncludeLoc, Intern, ItemContainerId, Macro2Id,
     Macro2Loc, MacroExpander, MacroId, MacroRulesId, MacroRulesLoc, MacroRulesLocFlags,
     ModuleDefId, ModuleId, ProcMacroId, ProcMacroLoc, StaticLoc, StructLoc, TraitLoc,
     TypeAliasLoc, UnionLoc, UnresolvedMacro, UseId, UseLoc,
     db::DefDatabase,
-    item_scope::{GlobId, ImportId, ImportOrExternCrate, PerNsGlobImports},
+    item_scope::{GlobId, ImportId, ImportOrExternCrate, PerNsGlobImports, UseOrImportId},
     item_tree::{
         self, Attrs, AttrsOrCfg, FieldsShape, ImportAlias, ImportKind, ItemTree, ItemTreeAstId,
         Macro2, MacroCall, MacroRules, Mod, ModItemId, ModKind, TreeId,
@@ -135,41 +135,6 @@ impl PartialResolvedImport {
         match self {
             PartialResolvedImport::Unresolved => PerNs::none(),
             PartialResolvedImport::Indeterminate(ns) | PartialResolvedImport::Resolved(ns) => ns,
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum UseOrImportId {
-    Use(UseId),
-    Include(IncludeId),
-    Import(ImportItemId),
-}
-
-impl UseOrImportId {
-    fn lookup(self, db: &dyn DefDatabase) -> ItemLoc<ast::Item> {
-        match self {
-            UseOrImportId::Use(id) => {
-                let loc = id.lookup(db);
-                ItemLoc {
-                    container: loc.container,
-                    id: InFile::new(loc.id.file_id, loc.id.value.upcast()),
-                }
-            }
-            UseOrImportId::Include(id) => {
-                let loc = id.lookup(db);
-                ItemLoc {
-                    container: loc.container,
-                    id: InFile::new(loc.id.file_id, loc.id.value.upcast()),
-                }
-            }
-            UseOrImportId::Import(id) => {
-                let loc = id.lookup(db);
-                ItemLoc {
-                    container: loc.container,
-                    id: InFile::new(loc.id.file_id, loc.id.value.upcast()),
-                }
-            }
         }
     }
 }

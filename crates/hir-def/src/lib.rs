@@ -914,6 +914,8 @@ pub enum AttrDefId {
     ExternBlockId(ExternBlockId),
     ExternCrateId(ExternCrateId),
     UseId(UseId),
+    IncludeId(IncludeId),
+    ImportItemId(ImportItemId),
 }
 
 impl_from!(
@@ -927,7 +929,9 @@ impl_from!(
     MacroId(Macro2Id, MacroRulesId, ProcMacroId),
     ImplId,
     ExternCrateId,
-    UseId
+    UseId,
+    IncludeId,
+    ImportItemId
     for AttrDefId
 );
 
@@ -946,6 +950,16 @@ impl From<VariantId> for AttrDefId {
             VariantId::EnumVariantId(id) => id.into(),
             VariantId::StructId(id) => id.into(),
             VariantId::UnionId(id) => id.into(),
+        }
+    }
+}
+
+impl From<crate::item_scope::UseOrImportId> for AttrDefId {
+    fn from(id: crate::item_scope::UseOrImportId) -> Self {
+        match id {
+            crate::item_scope::UseOrImportId::Use(id) => AttrDefId::UseId(id),
+            crate::item_scope::UseOrImportId::Include(id) => AttrDefId::IncludeId(id),
+            crate::item_scope::UseOrImportId::Import(id) => AttrDefId::ImportItemId(id),
         }
     }
 }
@@ -1198,6 +1212,8 @@ impl HasModule for AttrDefId {
             AttrDefId::MacroId(it) => it.module(db),
             AttrDefId::ExternCrateId(it) => it.module(db),
             AttrDefId::UseId(it) => it.module(db),
+            AttrDefId::IncludeId(it) => it.module(db),
+            AttrDefId::ImportItemId(it) => it.module(db),
         }
     }
 }

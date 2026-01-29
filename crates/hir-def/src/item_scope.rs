@@ -18,7 +18,7 @@ use thin_vec::ThinVec;
 
 use crate::{
     AdtId, BuiltinDeriveImplId, BuiltinType, ConstId, ExternBlockId, ExternCrateId, FxIndexMap,
-    HasModule, ImplId, Lookup, MacroCallStyles, MacroId, ModuleDefId, ModuleId, TraitId, UseId,
+    HasModule, ImplId, ImportItemId, IncludeId, Lookup, MacroCallStyles, MacroId, ModuleDefId, ModuleId, TraitId, UseId,
     db::DefDatabase,
     per_ns::{Item, MacrosItem, PerNs, TypesItem, ValuesItem},
     visibility::Visibility,
@@ -70,7 +70,7 @@ impl ImportOrExternCrate {
         }
     }
 
-    pub fn use_(self) -> Option<UseId> {
+    pub fn use_(self) -> Option<UseOrImportId> {
         match self {
             ImportOrExternCrate::Glob(id) => Some(id.use_),
             ImportOrExternCrate::Import(id) => Some(id.use_),
@@ -121,15 +121,50 @@ impl From<ImportOrGlob> for ImportOrDef {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
+pub enum UseOrImportId {
+    Use(UseId),
+    Include(IncludeId),
+    Import(ImportItemId),
+}
+
+impl UseOrImportId {
+    pub fn lookup(self, db: &dyn DefDatabase) -> crate::ItemLoc<ast::Item> {
+        match self {
+            UseOrImportId::Use(id) => {
+                let loc = id.lookup(db);
+                crate::ItemLoc {
+                    container: loc.container,
+                    id: hir_expand::InFile::new(loc.id.file_id, loc.id.value.upcast()),
+                }
+            }
+            UseOrImportId::Include(id) => {
+                let loc = id.lookup(db);
+                crate::ItemLoc {
+                    container: loc.container,
+                    id: hir_expand::InFile::new(loc.id.file_id, loc.id.value.upcast()),
+                }
+            }
+            UseOrImportId::Import(id) => {
+                let loc = id.lookup(db);
+                crate::ItemLoc {
+                    container: loc.container,
+                    id: hir_expand::InFile::new(loc.id.file_id, loc.id.value.upcast()),
+                }
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct ImportId {
-    pub use_: UseId,
+    pub use_: UseOrImportId,
     pub idx: Idx<ast::UseTree>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct GlobId {
-    pub use_: UseId,
+    pub use_: UseOrImportId,
     pub idx: Idx<ast::UseTree>,
 }
 

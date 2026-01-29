@@ -85,9 +85,7 @@ pub enum SyntaxKind {
     FUN_KW,
     IF_KW,
     IMPL_KW,
-    IMPORT_KW,
     IN_KW,
-    INCLUDE_KW,
     LET_KW,
     LOOP_KW,
     MACRO_KW,
@@ -130,6 +128,8 @@ pub enum SyntaxKind {
     FORMAT_ARGS_KW,
     GEN_KW,
     GLOBAL_ASM_KW,
+    IMPORT_KW,
+    INCLUDE_KW,
     INLATEOUT_KW,
     INOUT_KW,
     LABEL_KW,
@@ -582,9 +582,7 @@ impl SyntaxKind {
             FUN_KW => "fun",
             IF_KW => "if",
             IMPL_KW => "impl",
-            IMPORT_KW => "import",
             IN_KW => "in",
-            INCLUDE_KW => "include",
             LET_KW => "let",
             LOOP_KW => "loop",
             MACRO_KW => "macro",
@@ -624,6 +622,8 @@ impl SyntaxKind {
             DYN_KW => "dyn",
             FORMAT_ARGS_KW => "format_args",
             GLOBAL_ASM_KW => "global_asm",
+            IMPORT_KW => "import",
+            INCLUDE_KW => "include",
             INLATEOUT_KW => "inlateout",
             INOUT_KW => "inout",
             LABEL_KW => "label",
@@ -679,9 +679,7 @@ impl SyntaxKind {
                 | FUN_KW
                 | IF_KW
                 | IMPL_KW
-                | IMPORT_KW
                 | IN_KW
-                | INCLUDE_KW
                 | LET_KW
                 | LOOP_KW
                 | MACRO_KW
@@ -734,6 +732,8 @@ impl SyntaxKind {
             DYN_KW if edition < Edition::Edition2018 => true,
             FORMAT_ARGS_KW => true,
             GLOBAL_ASM_KW => true,
+            IMPORT_KW => true,
+            INCLUDE_KW => true,
             INLATEOUT_KW => true,
             INOUT_KW => true,
             LABEL_KW => true,
@@ -784,9 +784,7 @@ impl SyntaxKind {
                 | FUN_KW
                 | IF_KW
                 | IMPL_KW
-                | IMPORT_KW
                 | IN_KW
-                | INCLUDE_KW
                 | LET_KW
                 | LOOP_KW
                 | MACRO_KW
@@ -832,6 +830,8 @@ impl SyntaxKind {
             DYN_KW if edition < Edition::Edition2018 => true,
             FORMAT_ARGS_KW => true,
             GLOBAL_ASM_KW => true,
+            IMPORT_KW => true,
+            INCLUDE_KW => true,
             INLATEOUT_KW => true,
             INOUT_KW => true,
             LABEL_KW => true,
@@ -941,9 +941,7 @@ impl SyntaxKind {
             "fun" => FUN_KW,
             "if" => IF_KW,
             "impl" => IMPL_KW,
-            "import" => IMPORT_KW,
             "in" => IN_KW,
-            "include" => INCLUDE_KW,
             "let" => LET_KW,
             "loop" => LOOP_KW,
             "macro" => MACRO_KW,
@@ -994,6 +992,8 @@ impl SyntaxKind {
             "dyn" if edition < Edition::Edition2018 => DYN_KW,
             "format_args" => FORMAT_ARGS_KW,
             "global_asm" => GLOBAL_ASM_KW,
+            "import" => IMPORT_KW,
+            "include" => INCLUDE_KW,
             "inlateout" => INLATEOUT_KW,
             "inout" => INOUT_KW,
             "label" => LABEL_KW,
@@ -1132,9 +1132,7 @@ macro_rules ! T_ {
     [fun] => { $ crate :: SyntaxKind :: FUN_KW };
     [if] => { $ crate :: SyntaxKind :: IF_KW };
     [impl] => { $ crate :: SyntaxKind :: IMPL_KW };
-    [import] => { $ crate :: SyntaxKind :: IMPORT_KW };
     [in] => { $ crate :: SyntaxKind :: IN_KW };
-    [include] => { $ crate :: SyntaxKind :: INCLUDE_KW };
     [let] => { $ crate :: SyntaxKind :: LET_KW };
     [loop] => { $ crate :: SyntaxKind :: LOOP_KW };
     [macro] => { $ crate :: SyntaxKind :: MACRO_KW };
@@ -1174,6 +1172,8 @@ macro_rules ! T_ {
     [dyn] => { $ crate :: SyntaxKind :: DYN_KW };
     [format_args] => { $ crate :: SyntaxKind :: FORMAT_ARGS_KW };
     [global_asm] => { $ crate :: SyntaxKind :: GLOBAL_ASM_KW };
+    [import] => { $ crate :: SyntaxKind :: IMPORT_KW };
+    [include] => { $ crate :: SyntaxKind :: INCLUDE_KW };
     [inlateout] => { $ crate :: SyntaxKind :: INLATEOUT_KW };
     [inout] => { $ crate :: SyntaxKind :: INOUT_KW };
     [label] => { $ crate :: SyntaxKind :: LABEL_KW };

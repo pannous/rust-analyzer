@@ -1179,7 +1179,7 @@ fn emit_def_diagnostic_<'db>(
         DefDiagnosticKind::UnresolvedImport { id, index } => {
             let file_id = id.file_id;
 
-            let use_tree = hir_def::src::use_tree_to_ast(db, *id, *index);
+            let use_tree = hir_def::src::use_tree_to_ast_from_item(db, *id, *index);
             acc.push(
                 UnresolvedImport { decl: InFile::new(file_id, AstPtr::new(&use_tree)) }.into(),
             );

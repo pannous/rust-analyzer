@@ -18,7 +18,7 @@ use triomphe::Arc;
 use crate::{
     AdtId, AstIdLoc, ConstId, ConstParamId, DefWithBodyId, EnumId, EnumVariantId, ExternBlockId,
     ExternCrateId, FunctionId, FxIndexMap, GenericDefId, GenericParamId, HasModule, ImplId,
-    ItemContainerId, LifetimeParamId, Lookup, Macro2Id, MacroId, MacroRulesId, ModuleDefId,
+    ImportItemId, IncludeId, ItemContainerId, LifetimeParamId, Lookup, Macro2Id, MacroId, MacroRulesId, ModuleDefId,
     ModuleId, ProcMacroId, StaticId, StructId, TraitId, TypeAliasId, TypeOrConstParamId,
     TypeParamId, UseId, VariantId,
     builtin_type::BuiltinType,
@@ -1369,6 +1369,18 @@ impl HasResolver for ExternCrateId {
 }
 
 impl HasResolver for UseId {
+    fn resolver(self, db: &dyn DefDatabase) -> Resolver<'_> {
+        lookup_resolver(db, self)
+    }
+}
+
+impl HasResolver for IncludeId {
+    fn resolver(self, db: &dyn DefDatabase) -> Resolver<'_> {
+        lookup_resolver(db, self)
+    }
+}
+
+impl HasResolver for ImportItemId {
     fn resolver(self, db: &dyn DefDatabase) -> Resolver<'_> {
         lookup_resolver(db, self)
     }

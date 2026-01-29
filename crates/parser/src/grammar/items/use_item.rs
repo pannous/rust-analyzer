@@ -9,6 +9,24 @@ pub(super) fn use_(p: &mut Parser<'_>, m: Marker) {
     m.complete(p, USE);
 }
 
+// test include_item
+// include std::collections;
+pub(super) fn include(p: &mut Parser<'_>, m: Marker) {
+    p.bump(T![include]);
+    use_tree(p, true);
+    p.expect(T![;]);
+    m.complete(p, INCLUDE);
+}
+
+// test import_item
+// import std::collections;
+pub(super) fn import(p: &mut Parser<'_>, m: Marker) {
+    p.bump(T![import]);
+    use_tree(p, true);
+    p.expect(T![;]);
+    m.complete(p, IMPORT);
+}
+
 // test use_tree
 // use outer::tree::{inner::tree};
 fn use_tree(p: &mut Parser<'_>, top_level: bool) -> bool {

@@ -320,6 +320,8 @@ fn resolve_doc_path_on_(
         AttrsOwner::AttrDef(AttrDefId::ImplId(it)) => it.resolver(db),
         AttrsOwner::AttrDef(AttrDefId::ExternBlockId(it)) => it.resolver(db),
         AttrsOwner::AttrDef(AttrDefId::UseId(it)) => it.resolver(db),
+        AttrsOwner::AttrDef(AttrDefId::IncludeId(it)) => it.resolver(db),
+        AttrsOwner::AttrDef(AttrDefId::ImportItemId(it)) => it.resolver(db),
         AttrsOwner::AttrDef(AttrDefId::MacroId(it)) => it.resolver(db),
         AttrsOwner::AttrDef(AttrDefId::ExternCrateId(it)) => it.resolver(db),
         AttrsOwner::Field(it) => it.parent.resolver(db),

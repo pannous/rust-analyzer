@@ -394,6 +394,8 @@ fn attrs_source(
         AttrDefId::ExternBlockId(it) => attrs_from_ast_id_loc(db, it),
         AttrDefId::ExternCrateId(it) => attrs_from_ast_id_loc(db, it),
         AttrDefId::UseId(it) => attrs_from_ast_id_loc(db, it),
+        AttrDefId::IncludeId(it) => attrs_from_ast_id_loc(db, it),
+        AttrDefId::ImportItemId(it) => attrs_from_ast_id_loc(db, it),
     };
     (owner, None, None, krate)
 }
