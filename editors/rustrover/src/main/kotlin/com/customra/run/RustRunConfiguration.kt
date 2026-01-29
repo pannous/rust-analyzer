@@ -77,13 +77,10 @@ class RustRunConfiguration(
             val cargo = findCustomCargo()
             val runArgs = if (arguments.isNotBlank()) " -- $arguments" else ""
 
-            // If running a specific test function, use simple filter without --test flag
-            // If running entire file, use --test flag
-            val command = if (testFilter.isNotBlank()) {
-                "\"$cargo\" test $testFilter$runArgs"
-            } else {
-                "\"$cargo\" test --test $testName$runArgs"
-            }
+            // Always use --test flag to specify the test file
+            // Add test function filter if running specific test
+            val testFilterArg = if (testFilter.isNotBlank()) " $testFilter" else ""
+            val command = "\"$cargo\" test --test $testName$testFilterArg$runArgs"
             return Pair(command, cargoDir)
         }
 
