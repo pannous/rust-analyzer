@@ -21,11 +21,11 @@ use triomphe::Arc;
 use crate::{
     db::DefDatabase,
     item_tree::{
-        BigModItem, Const, Enum, ExternBlock, ExternCrate, FieldsShape, Function, Impl,
-        ImportAlias, Interned, ItemTree, ItemTreeAstId, Macro2, MacroCall, MacroRules, Mod,
-        ModItemId, ModKind, ModPath, RawVisibility, RawVisibilityId, SmallModItem, Static, Struct,
-        StructKind, Trait, TypeAlias, Union, Use, UseTree, UseTreeKind, VisibilityExplicitness,
-        attrs::AttrsOrCfg,
+        BigModItem, Const, Enum, ExternBlock, ExternCrate, FieldsShape, Function, Impl, Import,
+        ImportAlias, Include, Interned, ItemTree, ItemTreeAstId, Macro2, MacroCall, MacroRules,
+        Mod, ModItemId, ModKind, ModPath, RawVisibility, RawVisibilityId, SmallModItem, Static,
+        Struct, StructKind, Trait, TypeAlias, Union, Use, UseTree, UseTreeKind,
+        VisibilityExplicitness, attrs::AttrsOrCfg,
     },
 };
 
@@ -144,6 +144,8 @@ impl<'a> Ctx<'a> {
             ast::Item::Trait(ast) => self.lower_trait(ast)?.into(),
             ast::Item::Impl(ast) => self.lower_impl(ast).into(),
             ast::Item::Use(ast) => self.lower_use(ast)?.into(),
+            ast::Item::Include(ast) => self.lower_include(ast)?.into(),
+            ast::Item::Import(ast) => self.lower_import(ast)?.into(),
             ast::Item::ExternCrate(ast) => self.lower_extern_crate(ast)?.into(),
             ast::Item::MacroCall(ast) => self.lower_macro_call(ast)?.into(),
             ast::Item::MacroRules(ast) => self.lower_macro_rules(ast)?.into(),
@@ -285,6 +287,32 @@ impl<'a> Ctx<'a> {
 
         let res = Use { visibility, use_tree };
         self.tree.big_data.insert(ast_id.upcast(), BigModItem::Use(res));
+        Some(ast_id)
+    }
+
+    fn lower_include(&mut self, include_item: &ast::Include) -> Option<ItemTreeAstId<Include>> {
+        // Custom syntax: `include path::to::module;` behaves like `use path::to::module;`
+        let visibility = self.lower_visibility(include_item);
+        let ast_id = self.source_ast_id_map.ast_id(include_item);
+        let (use_tree, _) = lower_use_tree(self.db, include_item.use_tree()?, &mut |range| {
+            self.span_map().span_for_range(range).ctx
+        })?;
+
+        let res = Include { visibility, use_tree };
+        self.tree.big_data.insert(ast_id.upcast(), BigModItem::Include(res));
+        Some(ast_id)
+    }
+
+    fn lower_import(&mut self, import_item: &ast::Import) -> Option<ItemTreeAstId<Import>> {
+        // Custom syntax: `import path::to::module;` behaves like `use path::to::module;`
+        let visibility = self.lower_visibility(import_item);
+        let ast_id = self.source_ast_id_map.ast_id(import_item);
+        let (use_tree, _) = lower_use_tree(self.db, import_item.use_tree()?, &mut |range| {
+            self.span_map().span_for_range(range).ctx
+        })?;
+
+        let res = Import { visibility, use_tree };
+        self.tree.big_data.insert(ast_id.upcast(), BigModItem::Import(res));
         Some(ast_id)
     }
 

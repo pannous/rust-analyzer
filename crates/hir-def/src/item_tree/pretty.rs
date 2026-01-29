@@ -6,9 +6,10 @@ use span::{Edition, ErasedFileAstId};
 
 use crate::{
     item_tree::{
-        Const, DefDatabase, Enum, ExternBlock, ExternCrate, FieldsShape, Function, Impl, ItemTree,
-        Macro2, MacroCall, MacroRules, Mod, ModItemId, ModKind, RawVisibilityId, Static, Struct,
-        Trait, TypeAlias, Union, Use, UseTree, UseTreeKind, attrs::AttrsOrCfg,
+        Const, DefDatabase, Enum, ExternBlock, ExternCrate, FieldsShape, Function, Impl, Import,
+        Include, ItemTree, Macro2, MacroCall, MacroRules, Mod, ModItemId, ModKind,
+        RawVisibilityId, Static, Struct, Trait, TypeAlias, Union, Use, UseTree, UseTreeKind,
+        attrs::AttrsOrCfg,
     },
     visibility::RawVisibility,
 };
@@ -175,6 +176,22 @@ impl Printer<'_> {
                 self.print_ast_id(ast_id.erase());
                 self.print_visibility(*visibility);
                 w!(self, "use ");
+                self.print_use_tree(use_tree);
+                wln!(self, ";");
+            }
+            ModItemId::Include(ast_id) => {
+                let Include { visibility, use_tree } = &self.tree[ast_id];
+                self.print_ast_id(ast_id.erase());
+                self.print_visibility(*visibility);
+                w!(self, "include ");
+                self.print_use_tree(use_tree);
+                wln!(self, ";");
+            }
+            ModItemId::Import(ast_id) => {
+                let Import { visibility, use_tree } = &self.tree[ast_id];
+                self.print_ast_id(ast_id.erase());
+                self.print_visibility(*visibility);
+                w!(self, "import ");
                 self.print_use_tree(use_tree);
                 wln!(self, ";");
             }

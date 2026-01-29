@@ -315,6 +315,8 @@ enum SmallModItem {
 #[derive(Debug, Clone, Eq, PartialEq)]
 enum BigModItem {
     ExternCrate(ExternCrate),
+    Import(Import),
+    Include(Include),
     Mod(Mod),
     Use(Use),
 }
@@ -428,6 +430,8 @@ ModItemId ->
     ExternCrate in big_data -> ast::ExternCrate,
     Function in small_data -> ast::Fn,
     Impl in small_data -> ast::Impl,
+    Import in big_data -> ast::Import,
+    Include in big_data -> ast::Include,
     Macro2 in small_data -> ast::MacroDef,
     MacroCall in small_data -> ast::MacroCall,
     MacroRules in small_data -> ast::MacroRules,
@@ -462,6 +466,18 @@ impl Index<RawVisibilityId> for ItemTree {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Use {
+    pub(crate) visibility: RawVisibilityId,
+    pub(crate) use_tree: UseTree,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Include {
+    pub(crate) visibility: RawVisibilityId,
+    pub(crate) use_tree: UseTree,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Import {
     pub(crate) visibility: RawVisibilityId,
     pub(crate) use_tree: UseTree,
 }
@@ -671,6 +687,26 @@ pub enum ImportKind {
 }
 
 impl Use {
+    /// Expands the `UseTree` into individually imported `ModPath`s.
+    pub fn expand(
+        &self,
+        mut cb: impl FnMut(Idx<ast::UseTree>, ModPath, ImportKind, Option<ImportAlias>),
+    ) {
+        self.use_tree.expand_impl(None, &mut 0, &mut cb)
+    }
+}
+
+impl Include {
+    /// Expands the `UseTree` into individually imported `ModPath`s.
+    pub fn expand(
+        &self,
+        mut cb: impl FnMut(Idx<ast::UseTree>, ModPath, ImportKind, Option<ImportAlias>),
+    ) {
+        self.use_tree.expand_impl(None, &mut 0, &mut cb)
+    }
+}
+
+impl Import {
     /// Expands the `UseTree` into individually imported `ModPath`s.
     pub fn expand(
         &self,

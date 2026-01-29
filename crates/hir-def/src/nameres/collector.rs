@@ -30,10 +30,10 @@ use triomphe::Arc;
 use crate::{
     AdtId, AssocItemId, AstId, AstIdWithPath, BuiltinDeriveImplId, BuiltinDeriveImplLoc, ConstLoc,
     EnumLoc, ExternBlockLoc, ExternCrateId, ExternCrateLoc, FunctionId, FunctionLoc, FxIndexMap,
-    ImplLoc, Intern, ItemContainerId, Lookup, Macro2Id, Macro2Loc, MacroExpander, MacroId,
-    MacroRulesId, MacroRulesLoc, MacroRulesLocFlags, ModuleDefId, ModuleId, ProcMacroId,
-    ProcMacroLoc, StaticLoc, StructLoc, TraitLoc, TypeAliasLoc, UnionLoc, UnresolvedMacro, UseId,
-    UseLoc,
+    ImplLoc, ImportItemId, ImportItemLoc, IncludeId, IncludeLoc, Intern, ItemContainerId, Lookup, Macro2Id,
+    Macro2Loc, MacroExpander, MacroId, MacroRulesId, MacroRulesLoc, MacroRulesLocFlags,
+    ModuleDefId, ModuleId, ProcMacroId, ProcMacroLoc, StaticLoc, StructLoc, TraitLoc,
+    TypeAliasLoc, UnionLoc, UnresolvedMacro, UseId, UseLoc,
     db::DefDatabase,
     item_scope::{GlobId, ImportId, ImportOrExternCrate, PerNsGlobImports},
     item_tree::{
@@ -139,10 +139,45 @@ impl PartialResolvedImport {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum UseOrImportId {
+    Use(UseId),
+    Include(IncludeId),
+    Import(ImportItemId),
+}
+
+impl UseOrImportId {
+    fn lookup(self, db: &dyn DefDatabase) -> ItemLoc<ast::Item> {
+        match self {
+            UseOrImportId::Use(id) => {
+                let loc = id.lookup(db);
+                ItemLoc {
+                    container: loc.container,
+                    id: InFile::new(loc.id.file_id, loc.id.value.upcast()),
+                }
+            }
+            UseOrImportId::Include(id) => {
+                let loc = id.lookup(db);
+                ItemLoc {
+                    container: loc.container,
+                    id: InFile::new(loc.id.file_id, loc.id.value.upcast()),
+                }
+            }
+            UseOrImportId::Import(id) => {
+                let loc = id.lookup(db);
+                ItemLoc {
+                    container: loc.container,
+                    id: InFile::new(loc.id.file_id, loc.id.value.upcast()),
+                }
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct ImportSource {
     use_tree: Idx<ast::UseTree>,
-    id: UseId,
+    id: UseOrImportId,
     is_prelude: bool,
     kind: ImportKind,
 }
@@ -165,6 +200,47 @@ impl Import {
     ) {
         let it = &tree[item];
         let visibility = &tree[it.visibility];
+        let id = UseOrImportId::Use(id);
+        it.expand(|idx, path, kind, alias| {
+            cb(Self {
+                path,
+                alias,
+                visibility: visibility.clone(),
+                source: ImportSource { use_tree: idx, id, is_prelude, kind },
+            });
+        });
+    }
+
+    fn from_include(
+        tree: &ItemTree,
+        item: FileAstId<ast::Include>,
+        id: IncludeId,
+        is_prelude: bool,
+        mut cb: impl FnMut(Self),
+    ) {
+        let it = &tree[item];
+        let visibility = &tree[it.visibility];
+        let id = UseOrImportId::Include(id);
+        it.expand(|idx, path, kind, alias| {
+            cb(Self {
+                path,
+                alias,
+                visibility: visibility.clone(),
+                source: ImportSource { use_tree: idx, id, is_prelude, kind },
+            });
+        });
+    }
+
+    fn from_import(
+        tree: &ItemTree,
+        item: FileAstId<ast::Import>,
+        id: ImportItemId,
+        is_prelude: bool,
+        mut cb: impl FnMut(Self),
+    ) {
+        let it = &tree[item];
+        let visibility = &tree[it.visibility];
+        let id = UseOrImportId::Import(id);
         it.expand(|idx, path, kind, alias| {
             cb(Self {
                 path,
@@ -1954,6 +2030,38 @@ impl ModCollector<'_, '_> {
                     .intern(db);
                     let is_prelude = attrs.by_key(sym::prelude_import).exists();
                     Import::from_use(self.item_tree, item_tree_id, id, is_prelude, |import| {
+                        self.def_collector.unresolved_imports.push(ImportDirective {
+                            module_id: self.module_id,
+                            import,
+                            status: PartialResolvedImport::Unresolved,
+                        });
+                    })
+                }
+                ModItemId::Include(item_tree_id) => {
+                    // Custom syntax: `include` behaves like `use`
+                    let id = IncludeLoc {
+                        container: module_id,
+                        id: InFile::new(self.file_id(), item_tree_id),
+                    }
+                    .intern(db);
+                    let is_prelude = attrs.by_key(sym::prelude_import).exists();
+                    Import::from_include(self.item_tree, item_tree_id, id, is_prelude, |import| {
+                        self.def_collector.unresolved_imports.push(ImportDirective {
+                            module_id: self.module_id,
+                            import,
+                            status: PartialResolvedImport::Unresolved,
+                        });
+                    })
+                }
+                ModItemId::Import(item_tree_id) => {
+                    // Custom syntax: `import` behaves like `use`
+                    let id = ImportItemLoc {
+                        container: module_id,
+                        id: InFile::new(self.file_id(), item_tree_id),
+                    }
+                    .intern(db);
+                    let is_prelude = attrs.by_key(sym::prelude_import).exists();
+                    Import::from_import(self.item_tree, item_tree_id, id, is_prelude, |import| {
                         self.def_collector.unresolved_imports.push(ImportDirective {
                             module_id: self.module_id,
                             import,

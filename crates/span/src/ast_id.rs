@@ -96,6 +96,8 @@ impl fmt::Debug for ErasedFileAstId {
             TypeAlias,
             ExternBlock,
             Use,
+            Include,
+            Import,
             Impl,
             BlockExpr,
             AsmExpr,
@@ -148,6 +150,10 @@ enum ErasedFileAstIdKind {
     // https://rust-lang.zulipchat.com/#narrow/channel/185405-t-compiler.2Frust-analyzer/topic/.60infer.60.20queries.20and.20splitting.20.60DefMap.60).
     // So I left this as-is for now, as the def map improvement should also mitigate this.
     Use,
+    /// Custom syntax: `include` behaves like `use`
+    Include,
+    /// Custom syntax: `import` behaves like `use`
+    Import,
     /// Associated with [`ImplFileAstId`].
     Impl,
     /// Associated with [`BlockExprFileAstId`].
@@ -218,6 +224,8 @@ impl ErasedFileAstId {
             .or_else(|| assoc_item_ast_id(node, index_map, parent))
             .or_else(|| extern_block_ast_id(node, index_map))
             .or_else(|| use_ast_id(node, index_map))
+            .or_else(|| include_ast_id(node, index_map))
+            .or_else(|| import_ast_id(node, index_map))
             .or_else(|| impl_ast_id(node, index_map))
             .or_else(|| asm_expr_ast_id(node, index_map))
     }
@@ -228,6 +236,8 @@ impl ErasedFileAstId {
             || should_alloc_assoc_item(kind)
             || ast::ExternBlock::can_cast(kind)
             || ast::Use::can_cast(kind)
+            || ast::Include::can_cast(kind)
+            || ast::Import::can_cast(kind)
             || ast::Impl::can_cast(kind)
             || ast::AsmExpr::can_cast(kind)
     }
@@ -344,6 +354,32 @@ fn use_ast_id(
 ) -> Option<ErasedFileAstId> {
     if ast::Use::can_cast(node.kind()) {
         Some(index_map.new_id(ErasedFileAstIdKind::Use, ()))
+    } else {
+        None
+    }
+}
+
+impl AstIdNode for ast::Include {}
+
+fn include_ast_id(
+    node: &SyntaxNode,
+    index_map: &mut ErasedAstIdNextIndexMap,
+) -> Option<ErasedFileAstId> {
+    if ast::Include::can_cast(node.kind()) {
+        Some(index_map.new_id(ErasedFileAstIdKind::Include, ()))
+    } else {
+        None
+    }
+}
+
+impl AstIdNode for ast::Import {}
+
+fn import_ast_id(
+    node: &SyntaxNode,
+    index_map: &mut ErasedAstIdNextIndexMap,
+) -> Option<ErasedFileAstId> {
+    if ast::Import::can_cast(node.kind()) {
+        Some(index_map.new_id(ErasedFileAstIdKind::Import, ()))
     } else {
         None
     }

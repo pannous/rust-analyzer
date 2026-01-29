@@ -352,6 +352,12 @@ pub struct BuiltinDeriveImplId {
 type UseLoc = ItemLoc<ast::Use>;
 impl_intern!(UseId, UseLoc, intern_use, lookup_intern_use);
 
+type IncludeLoc = ItemLoc<ast::Include>;
+impl_intern!(IncludeId, IncludeLoc, intern_include_item, lookup_intern_include_item);
+
+type ImportItemLoc = ItemLoc<ast::Import>;
+impl_intern!(ImportItemId, ImportItemLoc, intern_import_item, lookup_intern_import_item);
+
 type ExternCrateLoc = ItemLoc<ast::ExternCrate>;
 impl_intern!(ExternCrateId, ExternCrateLoc, intern_extern_crate, lookup_intern_extern_crate);
 
