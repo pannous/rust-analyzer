@@ -459,8 +459,14 @@ impl<'db> DefCollector<'db> {
                 {
                     let _p = tracing::info_span!("resolve_imports loop").entered();
 
+                    let mut import_iterations = 0;
                     'resolve_imports: loop {
                         if self.resolve_imports() == ReachedFixedPoint::Yes {
+                            break 'resolve_imports;
+                        }
+                        import_iterations += 1;
+                        if import_iterations > FIXED_POINT_LIMIT {
+                            tracing::error!("import resolution is stuck in infinite loop");
                             break 'resolve_imports;
                         }
                     }
