@@ -387,6 +387,12 @@ config_data! {
         /// Enable support for procedural macros, implies `#rust-analyzer.cargo.buildScripts.enable#`.
         procMacro_enable: bool = true,
 
+        /// Number of proc-macro server processes to spawn.
+        ///
+        /// Controls how many independent `proc-macro-srv` processes rust-analyzer
+        /// runs in parallel to handle macro expansion.
+        procMacro_processes: NumProcesses = NumProcesses::Concrete(1),
+
         /// Internal config, path to proc-macro server executable.
         procMacro_server: Option<Utf8PathBuf> = None,
 
@@ -478,14 +484,26 @@ config_data! {
         typing_triggerChars: Option<String> = Some("=.".to_owned()),
 
 
-        /// Enables automatic discovery of projects using [`DiscoverWorkspaceConfig::command`].
+        /// Configure a command that rust-analyzer can invoke to
+        /// obtain configuration.
         ///
-        /// [`DiscoverWorkspaceConfig`] also requires setting `progressLabel` and `filesToWatch`.
-        /// `progressLabel` is used for the title in progress indicators, whereas `filesToWatch`
-        /// is used to determine which build system-specific files should be watched in order to
-        /// reload rust-analyzer.
+        /// This is an alternative to manually generating
+        /// `rust-project.json`: it enables rust-analyzer to generate
+        /// rust-project.json on the fly, and regenerate it when
+        /// switching or modifying projects.
         ///
-        /// Below is an example of a valid configuration:
+        /// This is an object with three fields:
+        ///
+        /// * `command`: the shell command to invoke
+        ///
+        /// * `filesToWatch`: which build system-specific files should
+        /// be watched to trigger regenerating the configuration
+        ///
+        /// * `progressLabel`: the name of the command, used in
+        /// progress indicators in the IDE
+        ///
+        /// Here's an example of a valid configuration:
+        ///
         /// ```json
         /// "rust-analyzer.workspace.discoverConfig": {
         ///     "command": [
@@ -500,12 +518,49 @@ config_data! {
         /// }
         /// ```
         ///
-        /// ## Workspace Discovery Protocol
+        /// ## Argument Substitutions
+        ///
+        /// If `command` includes the argument `{arg}`, that argument will be substituted
+        /// with the JSON-serialized form of the following enum:
+        ///
+        /// ```norun
+        /// #[derive(PartialEq, Clone, Debug, Serialize)]
+        /// #[serde(rename_all = "camelCase")]
+        /// pub enum DiscoverArgument {
+        ///    Path(AbsPathBuf),
+        ///    Buildfile(AbsPathBuf),
+        /// }
+        /// ```
+        ///
+        /// rust-analyzer will use the path invocation to find and
+        /// generate a `rust-project.json` and therefore a
+        /// workspace. Example:
+        ///
+        ///
+        /// ```norun
+        /// rust-project develop-json '{ "path": "myproject/src/main.rs" }'
+        /// ```
+        ///
+        /// rust-analyzer will use build file invocations to update an
+        /// existing workspace. Example:
+        ///
+        /// Or with a build file and the configuration above:
+        ///
+        /// ```norun
+        /// rust-project develop-json '{ "buildfile": "myproject/BUCK" }'
+        /// ```
+        ///
+        /// As a reference for implementors, buck2's `rust-project`
+        /// will likely be useful:
+        /// <https://github.com/facebook/buck2/tree/main/integrations/rust-project>.
+        ///
+        /// ## Discover Command Output
         ///
         /// **Warning**: This format is provisional and subject to change.
         ///
-        /// [`DiscoverWorkspaceConfig::command`] *must* return a JSON object corresponding to
-        /// `DiscoverProjectData::Finished`:
+        /// The discover command should output JSON objects, one per
+        /// line (JSONL format). These objects should correspond to
+        /// this Rust data type:
         ///
         /// ```norun
         /// #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -518,7 +573,14 @@ config_data! {
         /// }
         /// ```
         ///
-        /// As JSON, `DiscoverProjectData::Finished` is:
+        /// For example, a progress event:
+        ///
+        /// ```json
+        /// {"kind":"progress","message":"generating rust-project.json"}
+        /// ```
+        ///
+        /// A finished event can look like this (expanded and
+        /// commented for readability):
         ///
         /// ```json
         /// {
@@ -526,7 +588,7 @@ config_data! {
         ///     "kind": "finished",
         ///     // the file used by a non-Cargo build system to define
         ///     // a package or target.
-        ///     "buildfile": "rust-analyzer/BUILD",
+        ///     "buildfile": "rust-analyzer/BUCK",
         ///     // the contents of a rust-project.json, elided for brevity
         ///     "project": {
         ///         "sysroot": "foo",
@@ -535,41 +597,9 @@ config_data! {
         /// }
         /// ```
         ///
-        /// It is encouraged, but not required, to use the other variants on `DiscoverProjectData`
-        /// to provide a more polished end-user experience.
-        ///
-        /// `DiscoverWorkspaceConfig::command` may *optionally* include an `{arg}`, which will be
-        /// substituted with the JSON-serialized form of the following enum:
-        ///
-        /// ```norun
-        /// #[derive(PartialEq, Clone, Debug, Serialize)]
-        /// #[serde(rename_all = "camelCase")]
-        /// pub enum DiscoverArgument {
-        ///    Path(AbsPathBuf),
-        ///    Buildfile(AbsPathBuf),
-        /// }
-        /// ```
-        ///
-        /// The JSON representation of `DiscoverArgument::Path` is:
-        ///
-        /// ```json
-        /// {
-        ///     "path": "src/main.rs"
-        /// }
-        /// ```
-        ///
-        /// Similarly, the JSON representation of `DiscoverArgument::Buildfile` is:
-        ///
-        /// ```json
-        /// {
-        ///     "buildfile": "BUILD"
-        /// }
-        /// ```
-        ///
-        /// `DiscoverArgument::Path` is used to find and generate a `rust-project.json`, and
-        /// therefore, a workspace, whereas `DiscoverArgument::buildfile` is used to to update an
-        /// existing workspace. As a reference for implementors, buck2's `rust-project` will likely
-        /// be useful: <https://github.com/facebook/buck2/tree/main/integrations/rust-project>.
+        /// Only the finished event is required, but the other
+        /// variants are encouraged to give users more feedback about
+        /// progress or errors.
         workspace_discoverConfig: Option<DiscoverWorkspaceConfig> = None,
     }
 }
@@ -1043,6 +1073,7 @@ pub struct Config {
     /// The workspace roots as registered by the LSP client
     workspace_roots: Vec<AbsPathBuf>,
     caps: ClientCapabilities,
+    /// The LSP root path, deprecated in favor of `workspace_roots`
     root_path: AbsPathBuf,
     snippets: Vec<Snippet>,
     client_info: Option<ClientInfo>,
@@ -1365,6 +1396,10 @@ impl Config {
         }
 
         self.discovered_projects_from_command.push(ProjectJsonFromCommand { data, buildfile });
+    }
+
+    pub fn workspace_roots(&self) -> &[AbsPathBuf] {
+        &self.workspace_roots
     }
 }
 
@@ -1742,6 +1777,7 @@ impl Config {
     }
 
     pub fn root_path(&self) -> &AbsPathBuf {
+        // We should probably use `workspace_roots` here if set
         &self.root_path
     }
 
@@ -2641,6 +2677,13 @@ impl Config {
         }
     }
 
+    pub fn proc_macro_num_processes(&self) -> usize {
+        match self.procMacro_processes() {
+            NumProcesses::Concrete(0) | NumProcesses::Physical => num_cpus::get_physical(),
+            &NumProcesses::Concrete(n) => n,
+        }
+    }
+
     pub fn main_loop_num_threads(&self) -> usize {
         match self.numThreads() {
             Some(NumThreads::Concrete(0)) | None | Some(NumThreads::Physical) => {
@@ -3073,6 +3116,14 @@ pub enum TargetDirectory {
 pub enum NumThreads {
     Physical,
     Logical,
+    #[serde(untagged)]
+    Concrete(usize),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum NumProcesses {
+    Physical,
     #[serde(untagged)]
     Concrete(usize),
 }
@@ -3899,6 +3950,22 @@ fn field_props(field: &str, ty: &str, doc: &[&str], default: &str) -> serde_json
                     "enumDescriptions": [
                         "Use the number of physical cores",
                         "Use the number of logical cores",
+                    ],
+                },
+            ],
+        },
+        "NumProcesses" => set! {
+            "anyOf": [
+                {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 255
+                },
+                {
+                    "type": "string",
+                    "enum": ["physical"],
+                    "enumDescriptions": [
+                        "Use the number of physical cores",
                     ],
                 },
             ],

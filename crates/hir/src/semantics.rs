@@ -641,11 +641,14 @@ impl<'db> SemanticsImpl<'db> {
         })
     }
 
-    pub fn expand_derive_macro(&self, attr: &ast::Attr) -> Option<Vec<ExpandResult<SyntaxNode>>> {
+    pub fn expand_derive_macro(
+        &self,
+        attr: &ast::Attr,
+    ) -> Option<Vec<Option<ExpandResult<SyntaxNode>>>> {
         let res: Vec<_> = self
             .derive_macro_calls(attr)?
             .into_iter()
-            .flat_map(|call| {
+            .map(|call| {
                 let file_id = call?.left()?;
                 let ExpandResult { value, err } = self.db.parse_macro_expansion(file_id);
                 let root_node = value.0.syntax_node();
@@ -2000,12 +2003,30 @@ impl<'db> SemanticsImpl<'db> {
             .unwrap_or_default()
     }
 
+    pub fn record_literal_matched_fields(
+        &self,
+        literal: &ast::RecordExpr,
+    ) -> Vec<(Field, Type<'db>)> {
+        self.analyze(literal.syntax())
+            .and_then(|it| it.record_literal_matched_fields(self.db, literal))
+            .unwrap_or_default()
+    }
+
     pub fn record_pattern_missing_fields(
         &self,
         pattern: &ast::RecordPat,
     ) -> Vec<(Field, Type<'db>)> {
         self.analyze(pattern.syntax())
             .and_then(|it| it.record_pattern_missing_fields(self.db, pattern))
+            .unwrap_or_default()
+    }
+
+    pub fn record_pattern_matched_fields(
+        &self,
+        pattern: &ast::RecordPat,
+    ) -> Vec<(Field, Type<'db>)> {
+        self.analyze(pattern.syntax())
+            .and_then(|it| it.record_pattern_matched_fields(self.db, pattern))
             .unwrap_or_default()
     }
 

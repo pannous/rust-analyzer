@@ -1,6 +1,9 @@
 //! Bidirectional protocol messages
 
-use std::ops::Range;
+use std::{
+    io::{self, BufRead, Write},
+    ops::Range,
+};
 
 use paths::Utf8PathBuf;
 use serde::{Deserialize, Serialize};
@@ -8,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     ProcMacroKind,
     legacy_protocol::msg::{FlatTree, Message, PanicMessage, ServerConfig},
+    transport::postcard,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -37,6 +41,9 @@ pub enum SubResponse {
     },
     ByteRangeResult {
         range: Range<usize>,
+    },
+    Cancel {
+        reason: String,
     },
 }
 
@@ -84,29 +91,30 @@ pub struct ExpandMacroData {
     pub macro_body: FlatTree,
     pub macro_name: String,
     pub attributes: Option<FlatTree>,
-    #[serde(skip_serializing_if = "ExpnGlobals::skip_serializing_if")]
     #[serde(default)]
     pub has_global_spans: ExpnGlobals,
-
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
     pub span_data_table: Vec<u32>,
 }
 
 #[derive(Clone, Copy, Default, Debug, Serialize, Deserialize)]
 pub struct ExpnGlobals {
-    #[serde(skip_serializing)]
-    #[serde(default)]
-    pub serialize: bool,
     pub def_site: usize,
     pub call_site: usize,
     pub mixed_site: usize,
 }
 
-impl ExpnGlobals {
-    fn skip_serializing_if(&self) -> bool {
-        !self.serialize
+impl Message for BidirectionalMessage {
+    type Buf = Vec<u8>;
+
+    fn read(inp: &mut dyn BufRead, buf: &mut Self::Buf) -> io::Result<Option<Self>> {
+        Ok(match postcard::read(inp, buf)? {
+            None => None,
+            Some(buf) => Some(postcard::decode(buf)?),
+        })
+    }
+    fn write(self, out: &mut dyn Write) -> io::Result<()> {
+        let value = postcard::encode(&self)?;
+        postcard::write(out, &value)
     }
 }
-
-impl Message for BidirectionalMessage {}

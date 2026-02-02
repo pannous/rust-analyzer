@@ -109,6 +109,7 @@ define_symbols! {
     vectorcall_dash_unwind = "vectorcall-unwind",
     win64_dash_unwind = "win64-unwind",
     x86_dash_interrupt = "x86-interrupt",
+    rust_dash_preserve_dash_none = "preserve-none",
 
     @PLAIN:
     __ra_fixup,
@@ -525,6 +526,12 @@ define_symbols! {
     arbitrary_self_types,
     arbitrary_self_types_pointers,
     supertrait_item_shadowing,
+    new_range,
+    range,
+    RangeCopy,
+    RangeFromCopy,
+    RangeInclusiveCopy,
+    RangeToInclusiveCopy,
     hash,
     partial_cmp,
     cmp,
