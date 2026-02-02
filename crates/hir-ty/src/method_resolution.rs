@@ -290,10 +290,23 @@ impl<'db> InferenceTable<'db> {
         let interner = self.interner();
         // We use `Ident::with_dummy_span` since no built-in operator methods have
         // any macro-specific hygiene, so the span's context doesn't really matter.
-        let Some(method_item) =
-            trait_def_id.trait_items(self.db).method_by_name(&Name::new_symbol_root(method_name))
-        else {
-            panic!("expected associated item for operator trait")
+        let method_name_obj = Name::new_symbol_root(method_name);
+        let trait_items = trait_def_id.trait_items(self.db);
+        let Some(method_item) = trait_items.method_by_name(&method_name_obj) else {
+            // Method not found on operator trait - log details for debugging
+            let available_methods: Vec<_> = trait_items
+                .items
+                .iter()
+                .filter_map(|(name, item)| match item {
+                    hir_def::AssocItemId::FunctionId(_) => Some(name.clone()),
+                    _ => None,
+                })
+                .collect();
+            eprintln!(
+                "Warning: Method '{:?}' not found on operator trait {:?}. Available methods: {:?}",
+                method_name_obj, trait_def_id, available_methods
+            );
+            return None;
         };
 
         let def_id = method_item;

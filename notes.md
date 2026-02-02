@@ -106,3 +106,38 @@ cargo check
 
 Build issue completely resolved. All tests passing.
 
+
+## 2026-02-02 - Parser Fix: include/import Keywords
+
+### Problem
+Parser was panicking when encountering `include` or `import` keywords:
+```
+assertion failed: self.eat(kind)
+at parser/src/parser.rs:182
+```
+
+### Root Cause
+- `include` and `import` were defined as contextual keywords (IDENT)
+- But parser grammar was trying to match them as actual keywords with `T![include]` and `T![import]`
+- Mismatch caused assertion failure in `p.bump()`
+
+### Solution
+1. Moved `include` and `import` from `from_contextual_keyword()` to `from_keyword()` in syntax_kind/generated.rs
+2. Changed parser grammar in items.rs from contextual keyword check to direct keyword match:
+   - Before: `IDENT if p.at_contextual_kw(T![include]) => ...`
+   - After: `T![include] => ...`
+
+### Verification
+- ✓ All 301 parser tests passing
+- ✓ Lexer correctly tokenizes include/import as INCLUDE_KW/IMPORT_KW
+- ✓ Parser successfully parses include/import statements
+- ✓ Plugin builds and installs (v1.0.79)
+
+### Remaining Issue
+Type inference panic occurs when analyzing code with custom operators:
+```
+panic at hir-ty/src/method_resolution.rs:296
+expected associated item for operator trait
+```
+This is a separate issue in the type system that needs investigation.
+

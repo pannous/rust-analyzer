@@ -12,7 +12,8 @@ pub(super) fn use_(p: &mut Parser<'_>, m: Marker) {
 // test include_item
 // include std::collections;
 pub(super) fn include(p: &mut Parser<'_>, m: Marker) {
-    p.bump(T![include]);
+    assert!(p.at_contextual_kw(T![include]));
+    p.bump_remap(T![include]);
     use_tree(p, true);
     p.expect(T![;]);
     m.complete(p, INCLUDE);
@@ -21,7 +22,8 @@ pub(super) fn include(p: &mut Parser<'_>, m: Marker) {
 // test import_item
 // import std::collections;
 pub(super) fn import(p: &mut Parser<'_>, m: Marker) {
-    p.bump(T![import]);
+    assert!(p.at_contextual_kw(T![import]));
+    p.bump_remap(T![import]);
     use_tree(p, true);
     p.expect(T![;]);
     m.complete(p, IMPORT);
