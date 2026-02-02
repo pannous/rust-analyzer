@@ -260,8 +260,8 @@ fn opt_item_without_modifiers(p: &mut Parser<'_>, m: Marker) -> Result<(), Marke
         T![struct] => adt::strukt(p, m),
         T![enum] => adt::enum_(p, m),
         IDENT if p.at_contextual_kw(T![union]) && p.nth(1) == IDENT => adt::union(p, m),
-        IDENT if p.at_contextual_kw(T![include]) && p.nth(1) != BANG => use_item::include(p, m),
-        IDENT if p.at_contextual_kw(T![import]) && p.nth(1) != BANG => use_item::import(p, m),
+        T![include] => use_item::include(p, m),
+        T![import] => use_item::import(p, m),
 
         T![macro] => macro_def(p, m),
         // check if current token is "macro_rules" followed by "!" followed by an identifier
